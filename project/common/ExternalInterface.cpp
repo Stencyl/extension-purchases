@@ -29,6 +29,12 @@ static void purchases_initialize()
 }
 DEFINE_PRIM (purchases_initialize, 0);
 
+static void purchases_restore() 
+{
+	restorePurchases();
+}
+DEFINE_PRIM (purchases_restore, 0);
+
 static void purchases_buy(value productID)
 {
 	purchaseProduct(val_string(productID));

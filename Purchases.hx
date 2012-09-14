@@ -109,7 +109,7 @@ class Purchases
 	public static function restorePurchases():Void
 	{
 		#if cpp
-		//TODO
+		purchases_restore();
 		#end
 	}
 	
@@ -241,6 +241,7 @@ class Purchases
 
 	#if cpp
 	private static var purchases_initialize = Lib.load("purchases", "purchases_initialize", 0);
+	private static var purchases_restore = Lib.load("purchases", "purchases_restore", 0);
 	private static var purchases_buy = Lib.load("purchases", "purchases_buy", 1);
 	private static var purchases_canbuy = Lib.load("purchases", "purchases_canbuy", 0);
 	private static var purchases_release = Lib.load("purchases", "purchases_release", 0);

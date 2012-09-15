@@ -13,13 +13,13 @@
 
 using namespace purchases;
 
-AutoGCRoot* eventHandle = 0;
+AutoGCRoot* purchaseEventHandle = 0;
 
 #ifdef IPHONE
 
 static void purchases_set_event_handle(value onEvent)
 {
-	eventHandle = new AutoGCRoot(onEvent);
+	purchaseEventHandle = new AutoGCRoot(onEvent);
 }
 DEFINE_PRIM(purchases_set_event_handle, 1);
 
@@ -74,5 +74,5 @@ extern "C" void send_purchase_event(PurchaseEvent &inEvent)
     alloc_field(o,val_id("code"),alloc_int(inEvent.code));
     alloc_field(o,val_id("value"),alloc_int(inEvent.value));
     alloc_field(o,val_id("data"),alloc_string(inEvent.data));
-    val_call1(eventHandle->get(), o);
+    val_call1(purchaseEventHandle->get(), o);
 }

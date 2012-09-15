@@ -96,7 +96,7 @@ class Purchases
 		#if cpp
 		if(!initialized)
 		{
-			registerHandle();
+			set_event_handle(notifyListeners);
 			load();
 			
 			initialized = true;

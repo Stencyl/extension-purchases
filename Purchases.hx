@@ -13,6 +13,10 @@ import nme.net.SharedObject;
 import nme.net.SharedObjectFlushStatus;
 #end
 
+import com.stencyl.Engine;
+import com.stencyl.event.EventMaster;
+import com.stencyl.event.StencylEvent;
+
 import nme.events.EventDispatcher;
 import nme.events.Event;
 

@@ -66,13 +66,10 @@ extern "C" int purchases_register_prims()
     return 0; 
 }
 
-extern "C" void send_purchase_event(PurchaseEvent &inEvent)
+extern "C" void sendPurchaseEvent(const char* type, const char* data)
 {
-    printf("Send Event: %i\n", inEvent.type);
     value o = alloc_empty_object();
-    alloc_field(o,val_id("type"),alloc_int(inEvent.type));
-    alloc_field(o,val_id("code"),alloc_int(inEvent.code));
-    alloc_field(o,val_id("value"),alloc_int(inEvent.value));
-    alloc_field(o,val_id("data"),alloc_string(inEvent.data));
+    alloc_field(o,val_id("type"),alloc_string(type));
+    alloc_field(o,val_id("data"),alloc_string(data));
     val_call1(purchaseEventHandle->get(), o);
 }

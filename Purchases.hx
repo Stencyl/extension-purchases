@@ -22,7 +22,6 @@ import nme.events.Event;
 
 class Purchases
 {	
-	private static var listeners:Array<PurchaseEvent->Void> = new Array<PurchaseEvent->Void>();
 	private static var initialized:Bool = false;
 	private static var items:Hash<Int> = new Hash<Int>();
 
@@ -36,23 +35,41 @@ class Purchases
 	private static function notifyListeners(inEvent:Dynamic)
 	{
 		#if cpp
-		var type:Int = Std.int(Reflect.field(inEvent, "type"));
-		var code:Int = Std.int(Reflect.field(inEvent, "code"));
-		var value:Int = Std.int(Reflect.field(inEvent, "value"));
+		var type:String = Std.string(Reflect.field(inEvent, "type"));
 		var data:String = Std.string(Reflect.field(inEvent, "data"));
-		var event:PurchaseEvent;
 		
-		switch(type)
+		if(type == "started")
 		{
-			case 0:  event = new PurchaseEvent(PurchaseEvent.UNKNOWN, code, value, data);
-			case 1:  event = new PurchaseEvent(PurchaseEvent.IN_APP_PURCHASE_SUCCESS, code, value, data);
-			case 2:  event = new PurchaseEvent(PurchaseEvent.IN_APP_PURCHASE_FAIL, code, value, data);
-			case 3:  event = new PurchaseEvent(PurchaseEvent.IN_APP_PURCHASE_CANCEL, code, value, data);
-			default: event = new PurchaseEvent(PurchaseEvent.UNKNOWN, code, value, data);
+			trace("Purchases: Started");
+			Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_READY, data));
 		}
 		
+		else if(type == "success")
+		{
+			trace("Purchases: Successful Purchase");
+			Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_SUCCESS, data));
+		}
+		
+		else if(type == "failed")
+		{
+			trace("Purchases: Failed Purchase");
+			Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_FAIL, data));
+		}
+		
+		else if(type == "cancel")
+		{
+			trace("Purchases: Canceled Purchase");
+			Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_CANCEL, data));
+		}
+		
+		else if(type == "restore")
+		{
+			trace("Purchases: Restored Purchase");
+			Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_RESTORE, data));
+		}
+
 		//Consumable
-		if(type == 1)
+		if(type == "success")
 		{
 			var productID = data;
 			
@@ -68,31 +85,7 @@ class Purchases
 		
 			save();
 		}
-		
-		//Notify Listeners
-		for(i in 0...listeners.length)
-		{
-			if(listeners[i] != null)
-			{
-				listeners[i](event);
-			}
-		}	
 		#end
-	}
-	
-	public static function addListener(listener:PurchaseEvent->Void)
-	{
-		listeners.push(listener);
-	}
-	
-	public static function removeListener(listener:PurchaseEvent->Void)
-	{
-		listeners.remove(listener);
-	}
-	
-	public static function clearListeners()
-	{
-		listeners = new Array<PurchaseEvent->Void>();
 	}
 	
 	public static function initialize():Void 

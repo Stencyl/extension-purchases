@@ -4,7 +4,7 @@
 #include "Purchases.h"
 #include "PurchaseEvent.h"
 
-extern "C" void send_purchase_event(PurchaseEvent &inEvent);
+extern "C" void sendPurchaseEvent(const char* type, const char* data);
 
 @interface InAppPurchase: NSObject <SKProductsRequestDelegate, SKPaymentTransactionObserver>
 {
@@ -27,6 +27,7 @@ extern "C" void send_purchase_event(PurchaseEvent &inEvent);
 - (void)initInAppPurchase 
 {
 	[[SKPaymentQueue defaultQueue] addTransactionObserver:self];
+	sendPurchaseEvent("started", "");
 }
 
 - (void)restorePurchases 
@@ -78,19 +79,13 @@ extern "C" void send_purchase_event(PurchaseEvent &inEvent);
     if(wasSuccessful)
     {
     	NSLog(@"Successful Purchase");
-    	
-		PurchaseEvent evt(IN_APP_PURCHASE_SUCCESS);
-		evt.data = [transaction.payment.productIdentifier UTF8String];
-		send_purchase_event(evt);
+		sendPurchaseEvent("success", [transaction.payment.productIdentifier UTF8String]);
     }
     
     else
     {
     	NSLog(@"Failed Purchase");
-    
-        PurchaseEvent evt(IN_APP_PURCHASE_FAIL);
-		evt.data = [transaction.payment.productIdentifier UTF8String];
-		send_purchase_event(evt);
+        sendPurchaseEvent("failed", [transaction.payment.productIdentifier UTF8String]);
     }
 }
 
@@ -103,6 +98,7 @@ extern "C" void send_purchase_event(PurchaseEvent &inEvent);
 - (void)restoreTransaction:(SKPaymentTransaction*)transaction
 {
 	NSLog(@"Restoring Transaction");
+	sendPurchaseEvent("restore", [transaction.payment.productIdentifier UTF8String]);
     [self finishTransaction:transaction wasSuccessful:YES];
 } 
 
@@ -116,11 +112,8 @@ extern "C" void send_purchase_event(PurchaseEvent &inEvent);
     else
     {
     	NSLog(@"Canceled Purchase");
+    	sendPurchaseEvent("cancel", [transaction.payment.productIdentifier UTF8String]);
         [[SKPaymentQueue defaultQueue] finishTransaction:transaction];
-		
-		PurchaseEvent evt(IN_APP_PURCHASE_CANCEL);
-		evt.data = [transaction.payment.productIdentifier UTF8String];
-		send_purchase_event(evt);
     }
 }
 

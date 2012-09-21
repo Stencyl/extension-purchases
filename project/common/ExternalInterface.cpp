@@ -41,6 +41,24 @@ static void purchases_buy(value productID)
 }
 DEFINE_PRIM(purchases_buy, 1);
 
+static value purchases_title(value productID)
+{
+	return alloc_string(getTitle(val_string(productID)));
+}
+DEFINE_PRIM(purchases_title, 1);
+
+static value purchases_desc(value productID)
+{
+	return alloc_string(getDescription(val_string(productID)));
+}
+DEFINE_PRIM(purchases_desc, 1);
+
+static value purchases_price(value productID)
+{
+	return alloc_string(getPrice(val_string(productID)));
+}
+DEFINE_PRIM(purchases_price, 1);
+
 static value purchases_canbuy() 
 {
 	return alloc_bool(canPurchase());

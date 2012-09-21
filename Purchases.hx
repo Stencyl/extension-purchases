@@ -218,6 +218,39 @@ class Purchases
 		#end	
 	}
 	
+	public static function getTitle(productID:String):String 
+	{
+		#if cpp
+		return purchases_title(productID);
+		#end	
+		
+		#if !cpp
+		return "None";
+		#end
+	}
+	
+	public static function getDescription(productID:String):String 
+	{
+		#if cpp
+		return purchases_desc(productID);
+		#end	
+		
+		#if !cpp
+		return "None";
+		#end
+	}
+	
+	public static function getPrice(productID:String):String 
+	{
+		#if cpp
+		return purchases_price(productID);
+		#end	
+		
+		#if !cpp
+		return "None";
+		#end
+	}
+	
 	public static function canBuy():Bool 
 	{
 		#if cpp
@@ -242,6 +275,9 @@ class Purchases
 	private static var purchases_buy = Lib.load("purchases", "purchases_buy", 1);
 	private static var purchases_canbuy = Lib.load("purchases", "purchases_canbuy", 0);
 	private static var purchases_release = Lib.load("purchases", "purchases_release", 0);
+	private static var purchases_title = Lib.load("purchases", "purchases_title", 1);
+	private static var purchases_desc = Lib.load("purchases", "purchases_desc", 1);
+	private static var purchases_price = Lib.load("purchases", "purchases_price", 1);
 	private static var set_event_handle = Lib.load("purchases", "purchases_set_event_handle", 1);
 	#end
 }

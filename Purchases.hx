@@ -145,7 +145,7 @@ class Purchases
 		var flushStatus:String = null;
 		#end
 		
-		#if !js
+		#if(!js && !air)
 		try 
 		{
 		    flushStatus = so.flush();

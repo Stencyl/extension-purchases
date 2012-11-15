@@ -17,6 +17,27 @@ public class AndroidBilling
 	{
 		setPublicKey(publicKey);
 		GameActivity.getInstance().startService(new Intent(GameActivity.getInstance(), BillingService.class));
+		
+		Handler transactionHandler = new Handler()
+		{
+			public void handleMessage(android.os.Message msg) 
+			{
+				Log.i("IAP", "Transaction Complete");
+				Log.i("IAP", "Transaction Status: " + BillingHelper.latestPurchase.purchaseState);
+				Log.i("IAP", "Attempted to Purchase: " + BillingHelper.latestPurchase.productId);
+	
+				if(BillingHelper.latestPurchase.isPurchased())
+				{
+					//SUCCESS
+				} 
+				
+				else 
+				{
+					//FAILURE
+				}
+			};     
+		};
+		
 		BillingHelper.setCompletedHandler(transactionHandler);
 	}
 	
@@ -32,27 +53,7 @@ public class AndroidBilling
 	       	Log.i("IAP", "Can't purchase on this device");
 	    }
 	}
-	
-	private static Handler transactionHandler = new Handler()
-	{
-		public void handleMessage(android.os.Message msg) 
-		{
-			Log.i("IAP", "Transaction Complete");
-			Log.i("IAP", "Transaction Status: " + BillingHelper.latestPurchase.purchaseState);
-			Log.i("IAP", "Attempted to Purchase: " + BillingHelper.latestPurchase.productId);
-
-			if(BillingHelper.latestPurchase.isPurchased())
-			{
-				//SUCCESS
-			} 
-			
-			else 
-			{
-				//FAILURE
-			}
-		};     
-	};
-	
+		
 	private static String publicKey = "";
 	
 	public static void setPublicKey(String s)

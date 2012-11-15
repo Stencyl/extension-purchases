@@ -223,6 +223,15 @@ class Purchases
 		#if(cpp && mobile && !android)
 		purchases_buy(productID);
 		#end	
+		
+		#if(android)
+		if(funcBuy == null)
+		{
+			funcBuy = nme.JNI.createStaticMethod("AndroidBilling", "buy", "(Ljava/lang/String;)V", true);
+		}
+		
+		funcBuy([productID]);
+		#end	
 	}
 	
 	public static function getTitle(productID:String):String 

@@ -3,4 +3,5 @@
 	<classpath name="" />
 	<ndll name="purchases" />
 	<dependency name="StoreKit.framework" if="ios" />
+	<java path="project/android" />
 </project>

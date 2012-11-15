@@ -27,14 +27,14 @@ class Purchases
 
 	private static function registerHandle()
 	{
-		#if cpp
+		#if(cpp && mobile && !android)
 		set_event_handle(notifyListeners);
 		#end
 	}
 	
 	private static function notifyListeners(inEvent:Dynamic)
 	{
-		#if cpp
+		#if(cpp && mobile && !android)
 		var type:String = Std.string(Reflect.field(inEvent, "type"));
 		var data:String = Std.string(Reflect.field(inEvent, "data"));
 		
@@ -88,9 +88,9 @@ class Purchases
 		#end
 	}
 	
-	public static function initialize():Void 
+	public static function initialize(publicKey:String = ""):Void 
 	{
-		#if cpp
+		#if(cpp && mobile && !android)
 		if(!initialized)
 		{
 			set_event_handle(notifyListeners);
@@ -101,11 +101,20 @@ class Purchases
 		
 		purchases_initialize();
 		#end	
+		
+		#if android
+		if(funcInit == null)
+		{
+			funcInit = nme.JNI.createStaticMethod("AndroidBilling", "initialize", "(Ljava/lang/String;)V", true);
+		}
+		
+		funcInit([publicKey]);
+		#end
 	}
 	
 	public static function restorePurchases():Void
 	{
-		#if cpp
+		#if(cpp && mobile && !android)
 		purchases_restore();
 		#end
 	}
@@ -173,16 +182,14 @@ class Purchases
 	//True if they've bought this before. If consumable, if they have 1 or more of it.
 	public static function hasBought(productID:String)
 	{
-		#if cpp
+		#if(cpp && mobile && !android)
 		if(items == null)
 		{
 			return false;
 		}
 		
 		return items.exists(productID) && items.get(productID) > 0;
-		#end
-		
-		#if !cpp
+		#else
 		return false;
 		#end
 	}
@@ -190,7 +197,7 @@ class Purchases
 	//Uses up a "consumable" (decrements its count by 1).
 	public static function use(productID:String)
 	{
-		#if cpp
+		#if(cpp && mobile && !android)
 		if(hasBought(productID))
 		{
 			items.set(productID, items.get(productID) - 1);
@@ -201,7 +208,7 @@ class Purchases
 	
 	public static function getQuantity(productID:String):Int
 	{
-		#if cpp
+		#if(cpp && mobile && !android)
 		if(hasBought(productID))
 		{
 			return items.get(productID);
@@ -213,63 +220,61 @@ class Purchases
 
 	public static function buy(productID:String):Void 
 	{
-		#if cpp
+		#if(cpp && mobile && !android)
 		purchases_buy(productID);
 		#end	
 	}
 	
 	public static function getTitle(productID:String):String 
 	{
-		#if cpp
+		#if(cpp && mobile && !android)
 		return purchases_title(productID);
-		#end	
-		
-		#if !cpp
+		#else
 		return "None";
 		#end
 	}
 	
 	public static function getDescription(productID:String):String 
 	{
-		#if cpp
+		#if(cpp && mobile && !android)
 		return purchases_desc(productID);
-		#end	
-		
-		#if !cpp
+		#else
 		return "None";
 		#end
 	}
 	
 	public static function getPrice(productID:String):String 
 	{
-		#if cpp
+		#if(cpp && mobile && !android)
 		return purchases_price(productID);
-		#end	
-		
-		#if !cpp
+		#else
 		return "None";
 		#end
 	}
 	
 	public static function canBuy():Bool 
 	{
-		#if cpp
+		#if(cpp && mobile && !android)
 		return purchases_canbuy();
-		#end
-		
-		#if !cpp
+		#else
 		return false;
 		#end
 	}
 	
 	public static function release():Void 
 	{
-		#if cpp
+		#if(cpp && mobile && !android)
 		purchases_release();
 		#end
 	}
+	
+	#if android
+	private static var funcInit:Dynamic;
+	private static var funcBuy:Dynamic;
+	private static var funcRestore:Dynamic;
+	#end
 
-	#if cpp
+	#if(cpp && mobile && !android)
 	private static var purchases_initialize = Lib.load("purchases", "purchases_initialize", 0);
 	private static var purchases_restore = Lib.load("purchases", "purchases_restore", 0);
 	private static var purchases_buy = Lib.load("purchases", "purchases_buy", 1);

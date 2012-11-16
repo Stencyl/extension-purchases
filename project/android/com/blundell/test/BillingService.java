@@ -25,9 +25,9 @@ public class BillingService extends Service implements ServiceConnection{
 		try {
 			boolean bindResult = bindService(new Intent("com.android.vending.billing.MarketBillingService.BIND"), this, Context.BIND_AUTO_CREATE);
 			if(bindResult){
-				Log.i(TAG,"Market Billing Service Successfully Bound");
+				Log.i(TAG,"Bound to Android Billing");
 			} else {
-				Log.e(TAG,"Market Billing Service could not be bound.");
+				Log.e(TAG,"Could not bind Android Billing - Try updating to the latest version of Google Play.");
 				//TODO stop user continuing
 			}
 		} catch (SecurityException e){

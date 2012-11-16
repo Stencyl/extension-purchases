@@ -13,32 +13,49 @@ import org.haxe.nme.GameActivity;
 
 public class AndroidBilling
 {
-	public static void initialize(final String publicKey)
+	public static void initialize(String publicKey)
 	{
-		setPublicKey(publicKey);
-		GameActivity.getInstance().startService(new Intent(GameActivity.getInstance(), BillingService.class));
-		
-		Handler transactionHandler = new Handler()
-		{
-			public void handleMessage(android.os.Message msg) 
-			{
-				Log.i("IAP", "Transaction Complete");
-				Log.i("IAP", "Transaction Status: " + BillingHelper.latestPurchase.purchaseState);
-				Log.i("IAP", "Attempted to Purchase: " + BillingHelper.latestPurchase.productId);
+		Log.i("IAP", "Attempt to init billing service");
 	
-				if(BillingHelper.latestPurchase.isPurchased())
-				{
-					//SUCCESS
-				} 
-				
-				else 
-				{
-					//FAILURE
-				}
-			};     
-		};
+		setPublicKey(publicKey);
 		
-		BillingHelper.setCompletedHandler(transactionHandler);
+		GameActivity.getInstance().runOnUiThread(new Runnable() 
+		{
+			public void run() 
+			{
+				GameActivity.getInstance().startService(new Intent(GameActivity.getInstance(), BillingService.class));
+		
+				Handler transactionHandler = new Handler()
+				{
+					public void handleMessage(android.os.Message msg) 
+					{
+						if(BillingHelper.latestPurchase != null)
+						{
+							Log.i("IAP", "Transaction Complete");
+							Log.i("IAP", "Transaction Status: " + BillingHelper.latestPurchase.purchaseState);
+							Log.i("IAP", "Attempted to Purchase: " + BillingHelper.latestPurchase.productId);
+				
+							if(BillingHelper.latestPurchase.isPurchased())
+							{
+								//SUCCESS
+							} 
+							
+							else 
+							{
+								//FAILURE
+							}
+						}
+						
+						else
+						{
+							//FAILED
+						}
+					};     
+				};
+				
+				BillingHelper.setCompletedHandler(transactionHandler);
+			}
+		});
 	}
 	
 	public static void buy(String productID)

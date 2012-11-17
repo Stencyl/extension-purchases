@@ -169,7 +169,12 @@ class Purchases
 		#end
 		
 		#if(android)
-		//TODO
+		if(funcRestore == null)
+		{
+			funcRestore = nme.JNI.createStaticMethod("AndroidBilling", "restore", "()V", true);
+		}
+		
+		funcRestore([]);
 		#end
 	}
 	

@@ -119,6 +119,8 @@ public class AndroidBilling
 	
 	public static void buy(String productID)
 	{
+		Log.i("IAP", "Attempt to Buy: " + productID);
+		
 		if(BillingHelper.isBillingSupported())
 		{
         	BillingHelper.requestPurchase(GameActivity.getInstance(), productID);
@@ -127,6 +129,21 @@ public class AndroidBilling
         else 
         {
 	       	Log.i("IAP", "Can't purchase on this device");
+	    }
+	}
+	
+	public static void restore()
+	{
+		Log.i("IAP", "Attempt to Restore Purchases");
+	
+		if(BillingHelper.isBillingSupported())
+		{
+        	BillingHelper.restoreTransactionInformation(BillingSecurity.generateNonce());
+        }
+        
+        else 
+        {
+	       	Log.i("IAP", "Can't restore transactions since this device doesn't support in-app purchases.");
 	    }
 	}
 	

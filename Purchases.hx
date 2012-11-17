@@ -22,6 +22,55 @@ import nme.events.Event;
 
 class Purchases
 {	
+	//Used for Android callbacks from Java
+	public function new()
+	{
+	}
+	
+	public function onStarted()
+	{
+		trace("Purchases: Started");
+		Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_READY, ""));
+	}
+	
+	public function onPurchase(productID:String)
+	{
+		trace("Purchases: Successful Purchase");
+		Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_SUCCESS, productID));
+		
+		if(hasBought(productID))
+		{
+			items.set(productID, Purchases.items.get(productID) + 1);
+		}
+			
+		else
+		{
+			items.set(productID, 1);
+		}
+		
+		save();
+	}
+	
+	public function onFailedPurchase(productID:String)
+	{
+		trace("Purchases: Failed Purchase");
+		Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_FAIL, productID));
+	}
+	
+	public function onCanceledPurchase(productID:String)
+	{
+		trace("Purchases: Canceled Purchase");
+		Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_CANCEL, productID));
+	}
+	
+	public function onRestorePurchases()
+	{
+		trace("Purchases: Restored Purchase");
+		Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_RESTORE, ""));
+	}
+	
+	//---------------------------------------------
+
 	private static var initialized:Bool = false;
 	private static var items:Hash<Int> = new Hash<Int>();
 
@@ -105,10 +154,11 @@ class Purchases
 		#if android
 		if(funcInit == null)
 		{
-			funcInit = nme.JNI.createStaticMethod("AndroidBilling", "initialize", "(Ljava/lang/String;)V", true);
+			funcInit = nme.JNI.createStaticMethod("AndroidBilling", "initialize", "(Ljava/lang/String;Lorg/haxe/nme/HaxeObject;)V", true);
+			load();
 		}
 		
-		funcInit([publicKey]);
+		funcInit([publicKey, new Purchases()]);
 		#end
 	}
 	
@@ -116,6 +166,10 @@ class Purchases
 	{
 		#if(cpp && mobile && !android)
 		purchases_restore();
+		#end
+		
+		#if(android)
+		//TODO
 		#end
 	}
 	
@@ -182,7 +236,7 @@ class Purchases
 	//True if they've bought this before. If consumable, if they have 1 or more of it.
 	public static function hasBought(productID:String)
 	{
-		#if(cpp && mobile && !android)
+		#if(cpp && mobile)
 		if(items == null)
 		{
 			return false;
@@ -197,7 +251,7 @@ class Purchases
 	//Uses up a "consumable" (decrements its count by 1).
 	public static function use(productID:String)
 	{
-		#if(cpp && mobile && !android)
+		#if(cpp && mobile)
 		if(hasBought(productID))
 		{
 			items.set(productID, items.get(productID) - 1);
@@ -208,7 +262,7 @@ class Purchases
 	
 	public static function getQuantity(productID:String):Int
 	{
-		#if(cpp && mobile && !android)
+		#if(cpp && mobile)
 		if(hasBought(productID))
 		{
 			return items.get(productID);
@@ -281,6 +335,7 @@ class Purchases
 	private static var funcInit:Dynamic;
 	private static var funcBuy:Dynamic;
 	private static var funcRestore:Dynamic;
+	private static var funcTest:Dynamic;
 	#end
 
 	#if(cpp && mobile && !android)

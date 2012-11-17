@@ -10,13 +10,23 @@ import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.ImageView;
 import org.haxe.nme.GameActivity;
+import org.haxe.nme.HaxeObject;
 
 public class AndroidBilling
 {
-	public static void initialize(String publicKey)
+	private static String publicKey = "";
+	private static HaxeObject callback = null;
+
+	private static void runInHaxe(Runnable r)
+	{
+		GameActivity.getInstance().runOnUiThread(r);
+	}
+
+	public static void initialize(String publicKey, final HaxeObject callback)
 	{
 		Log.i("IAP", "Attempt to init billing service");
 	
+		AndroidBilling.callback = callback;
 		setPublicKey(publicKey);
 		
 		GameActivity.getInstance().runOnUiThread(new Runnable() 
@@ -38,22 +48,71 @@ public class AndroidBilling
 							if(BillingHelper.latestPurchase.isPurchased())
 							{
 								//SUCCESS
+								Log.i("IAP", "Transaction Success");
+								
+								GameActivity.getInstance().runOnUiThread
+								(
+									new Runnable()
+									{ 
+										public void run() 
+										{
+											callback.call("onPurchase", new Object[] {BillingHelper.latestPurchase.productId});
+										}
+									}
+								);
 							} 
 							
 							else 
 							{
 								//FAILURE
+								Log.i("IAP", "Transaction Failed");
+								
+								GameActivity.getInstance().runOnUiThread
+								(
+									new Runnable()
+									{ 
+										public void run() 
+										{
+											callback.call("onFailedPurchase", new Object[] {BillingHelper.latestPurchase.productId});
+											callback.call("onCanceledPurchase", new Object[] {BillingHelper.latestPurchase.productId});
+										}
+									}
+								);
 							}
 						}
 						
 						else
 						{
 							//FAILED
+							Log.i("IAP", "Transaction Failed");
+							
+							GameActivity.getInstance().runOnUiThread
+							(
+								new Runnable()
+								{ 
+									public void run() 
+									{
+										callback.call("onFailedPurchase", new Object[] {BillingSecurity.latestProductID});
+										callback.call("onCanceledPurchase", new Object[] {BillingSecurity.latestProductID});
+									}
+								}
+							);
 						}
 					};     
 				};
 				
 				BillingHelper.setCompletedHandler(transactionHandler);
+				
+				GameActivity.getInstance().runOnUiThread
+				(
+					new Runnable()
+					{ 
+						public void run() 
+						{
+							callback.call("onStarted", new Object[] {});
+						}
+					}
+				);
 			}
 		});
 	}
@@ -70,8 +129,6 @@ public class AndroidBilling
 	       	Log.i("IAP", "Can't purchase on this device");
 	    }
 	}
-		
-	private static String publicKey = "";
 	
 	public static void setPublicKey(String s)
 	{

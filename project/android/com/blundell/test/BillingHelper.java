@@ -252,7 +252,7 @@ public class BillingHelper {
 			latestPurchase = purchases.get(0);
 			confirmTransaction(new String[]{latestPurchase.notificationId});
 		}
-		
+
 		if(mCompletedHandler != null){
 			mCompletedHandler.sendEmptyMessage(0);
 		} else {

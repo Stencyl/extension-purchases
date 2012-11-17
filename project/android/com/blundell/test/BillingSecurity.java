@@ -40,6 +40,8 @@ public class BillingSecurity {
 	private static final String KEY_FACTORY_ALGORITHM = "RSA";
 	private static final String SIGNATURE_ALGORITHM = "SHA1withRSA";
 	private static final SecureRandom RANDOM = new SecureRandom();
+	
+	public static String latestProductID = "";
 
 	/**
 	 * This keeps track of the nonces that we generated and sent to the server.
@@ -183,7 +185,12 @@ public class BillingSecurity {
 				// If the purchase state is PURCHASED, then we require a
 				// verified nonce.
 				if (purchaseState == PurchaseState.PURCHASED && !verified) {
-					continue;
+					Log.i(TAG, "Found a purchase but it is not verified - " + productId);
+					if(!productId.equals("android.test.purchased"))
+					{
+						BillingSecurity.latestProductID = productId;
+						continue;
+					}
 				}
 				purchases.add(new VerifiedPurchase(purchaseState, notifyId, productId, orderId, purchaseTime, developerPayload));
 			}

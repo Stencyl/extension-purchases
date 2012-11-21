@@ -42,6 +42,12 @@ extern "C" void sendPurchaseEvent(const char* type, const char* data);
 
 - (void)purchaseProduct:(NSString*)productIdentifiers
 {
+	if(productsRequest != NULL)
+	{
+		NSLog(@"Can't start another purchase until previous one is complete.");
+		return;
+	}
+	
 	productID = productIdentifiers;
 	productsRequest = [[SKProductsRequest alloc] initWithProductIdentifiers:[NSSet setWithObject:productID]];
 	productsRequest.delegate = self;
@@ -70,6 +76,7 @@ extern "C" void sendPurchaseEvent(const char* type, const char* data);
 	}
     
     [productsRequest release];
+    productsRequest = NULL;
 }
 
 - (void)finishTransaction:(SKPaymentTransaction*)transaction wasSuccessful:(BOOL)wasSuccessful

@@ -247,7 +247,7 @@ public class BillingHelper {
 	public static void verifyPurchase(String signedData, String signature) {
 		ArrayList<VerifiedPurchase> purchases = BillingSecurity.verifyPurchase(signedData, signature);
 		
-		if(purchases.size() > 0)
+		if(purchases != null && !purchases.isEmpty())
 		{
 			latestPurchase = purchases.get(0);
 			confirmTransaction(new String[]{latestPurchase.notificationId});

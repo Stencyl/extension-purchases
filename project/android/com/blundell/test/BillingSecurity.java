@@ -43,7 +43,7 @@ public class BillingSecurity {
 	
 	public static String latestProductID = "";
 	
-	private static String pk = "";
+	public static String pk = "";
 
 	/**
 	 * This keeps track of the nonces that we generated and sent to the server.

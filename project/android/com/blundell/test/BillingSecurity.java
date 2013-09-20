@@ -42,6 +42,8 @@ public class BillingSecurity {
 	private static final SecureRandom RANDOM = new SecureRandom();
 	
 	public static String latestProductID = "";
+	
+	private static String pk = "";
 
 	/**
 	 * This keeps track of the nonces that we generated and sent to the server.
@@ -135,7 +137,7 @@ public class BillingSecurity {
 			 * Generally, encryption keys / passwords should only be kept in
 			 * memory long enough to perform the operation they need to perform.
 			 */
-			String base64EncodedPublicKey = AndroidBilling.publicKey;
+			String base64EncodedPublicKey = pk;
 			PublicKey key = BillingSecurity.generatePublicKey(base64EncodedPublicKey);
 			verified = BillingSecurity.verify(key, signedData, signature);
 			if (!verified) {

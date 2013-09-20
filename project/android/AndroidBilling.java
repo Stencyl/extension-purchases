@@ -150,6 +150,7 @@ public class AndroidBilling
 	public static void setPublicKey(String s)
 	{
 		publicKey = s;
+		com.blundell.test.BillingSecurity.pk = AndroidBilling.publicKey;
 	}
 	
 	public static String getPublicKey()

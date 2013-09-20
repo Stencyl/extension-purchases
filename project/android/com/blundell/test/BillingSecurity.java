@@ -135,7 +135,7 @@ public class BillingSecurity {
 			 * Generally, encryption keys / passwords should only be kept in
 			 * memory long enough to perform the operation they need to perform.
 			 */
-			String base64EncodedPublicKey = "PUT YOUR PUBLIC KEY HERE";
+			String base64EncodedPublicKey = AndroidBilling.publicKey;
 			PublicKey key = BillingSecurity.generatePublicKey(base64EncodedPublicKey);
 			verified = BillingSecurity.verify(key, signedData, signature);
 			if (!verified) {

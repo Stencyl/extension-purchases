@@ -78,7 +78,7 @@ class Purchases
 	//---------------------------------------------
 
 	private static var initialized:Bool = false;
-	private static var items:Hash<Int> = new Hash<Int>();
+	private static var items:Map<String,Int> = new Map<String,Int>();
 
 	private static function registerHandle()
 	{
@@ -170,7 +170,10 @@ class Purchases
 			load();
 		}
 		
-		funcInit([publicKey, new Purchases()]);
+		var args = new Array<Dynamic>();
+		args.push(publicKey);
+		args.push(new Purchases());
+		funcInit(args);
 		#end
 	}
 	

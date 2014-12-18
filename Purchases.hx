@@ -81,6 +81,7 @@ class Purchases
 
 	private static var initialized:Bool = false;
 	private static var items:Map<String,Int> = new Map<String,Int>();
+	private static var detailMap:Map<String, Array<String>> = new Map < String, Array<String> > ();
 
 	private static function registerHandle()
 	{
@@ -401,8 +402,7 @@ class Purchases
 		#end
 	}
 	
-	#if android
-	private static var detailMap:Map<String, Array<String>> = new Map < String, Array<String> > ();
+	#if android	
 	private static var funcInit:Dynamic;
 	private static var funcBuy:Dynamic;
 	private static var funcSub:Dynamic;

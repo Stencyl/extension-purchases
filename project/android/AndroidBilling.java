@@ -1,4 +1,5 @@
-import com.blundell.test.*;
+
+import com.anjlab.android.iab.v3.*;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -12,149 +13,174 @@ import android.widget.ImageView;
 import org.haxe.nme.GameActivity;
 import org.haxe.nme.HaxeObject;
 
-public class AndroidBilling
+import org.haxe.extension.Extension;
+
+public class AndroidBilling extends Extension implements BillingProcessor.IBillingHandler
 {
 	private static String publicKey = "";
 	private static HaxeObject callback = null;
+	private static AndroidBilling ab;
+	private static BillingProcessor bp;
+	
+	private static String lastPurchaseAttempt = "";
 
-	private static void runInHaxe(Runnable r)
-	{
-		GameActivity.getInstance().runOnUiThread(r);
-	}
+	public AndroidBilling()
+    {
+    	super();
+    	
+    	ab = this;
+    }
+	
+    public static void release() {
+        if (bp != null) 
+        {
+            bp.release();
+            bp = null;
+        }
+    }
 
 	public static void initialize(String publicKey, final HaxeObject callback)
 	{
 		Log.i("IAP", "Attempt to init billing service");
 	
+		ab = new AndroidBilling();
 		AndroidBilling.callback = callback;
 		setPublicKey(publicKey);
 		
-		GameActivity.getInstance().runOnUiThread(new Runnable() 
-		{
-			public void run() 
-			{
-				GameActivity.getInstance().startService(new Intent(GameActivity.getInstance(), BillingService.class));
-		
-				Handler transactionHandler = new Handler()
-				{
-					public void handleMessage(android.os.Message msg) 
-					{
-						if(BillingHelper.latestPurchase != null)
-						{
-							Log.i("IAP", "Transaction Complete");
-							Log.i("IAP", "Transaction Status: " + BillingHelper.latestPurchase.purchaseState);
-							Log.i("IAP", "Attempted to Purchase: " + BillingHelper.latestPurchase.productId);
-				
-							if(BillingHelper.latestPurchase.isPurchased())
-							{
-								//SUCCESS
-								Log.i("IAP", "Transaction Success");
-								
-								GameActivity.getInstance().runOnUiThread
-								(
-									new Runnable()
-									{ 
-										public void run() 
-										{
-											callback.call("onPurchase", new Object[] {BillingHelper.latestPurchase.productId});
-										}
-									}
-								);
-							} 
-							
-							else 
-							{
-								//FAILURE
-								Log.i("IAP", "Transaction Failed");
-								
-								GameActivity.getInstance().runOnUiThread
-								(
-									new Runnable()
-									{ 
-										public void run() 
-										{
-											callback.call("onFailedPurchase", new Object[] {BillingHelper.latestPurchase.productId});
-											callback.call("onCanceledPurchase", new Object[] {BillingHelper.latestPurchase.productId});
-										}
-									}
-								);
-							}
-						}
-						
-						else
-						{
-							//FAILED
-							Log.i("IAP", "Transaction Failed");
-							
-							GameActivity.getInstance().runOnUiThread
-							(
-								new Runnable()
-								{ 
-									public void run() 
-									{
-										callback.call("onFailedPurchase", new Object[] {BillingSecurity.latestProductID});
-										callback.call("onCanceledPurchase", new Object[] {BillingSecurity.latestProductID});
-									}
-								}
-							);
-						}
-					};     
-				};
-				
-				BillingHelper.setCompletedHandler(transactionHandler);
-				
-				GameActivity.getInstance().runOnUiThread
-				(
-					new Runnable()
-					{ 
-						public void run() 
-						{
-							callback.call("onStarted", new Object[] {});
-						}
-					}
-				);
-			}
-		});
+		bp = new BillingProcessor(mainActivity, publicKey, ab);
 	}
 	
 	public static void buy(String productID)
 	{
-		Log.i("IAP", "Attempt to Buy: " + productID);
+		Log.i("IAP", "Attempt to Buy: " + productID);		
+		lastPurchaseAttempt = productID;
 		
-		if(BillingHelper.isBillingSupported())
-		{
-        	BillingHelper.requestPurchase(GameActivity.getInstance(), productID);
-        }
-        
-        else 
-        {
-	       	Log.i("IAP", "Can't purchase on this device");
-	    }
+		//Run on UI?
+		bp.purchase(productID);
+	}
+	
+	public static void subscribe(String productID)
+	{
+		Log.i("IAP", "Attempt to Subscribe: " + productID);		
+		lastPurchaseAttempt = productID;
+		
+		//Run on UI?
+		bp.subscribe(productID);
 	}
 	
 	public static void restore()
 	{
 		Log.i("IAP", "Attempt to Restore Purchases");
 	
-		if(BillingHelper.isBillingSupported())
-		{
-        	BillingHelper.restoreTransactionInformation(BillingSecurity.generateNonce());
-        }
-        
-        else 
-        {
-	       	Log.i("IAP", "Can't restore transactions since this device doesn't support in-app purchases.");
-	    }
+		bp.loadOwnedPurchasesFromGoogle();
+	}
+	
+	public static void purchaseInfo(String productID)
+	{
+		//Run on UI?
+		final SkuDetails sd = bp.getPurchaseListingDetails(productID);
+		
+		GameActivity.getInstance().runOnUiThread
+		(
+			new Runnable()
+			{ 
+				public void run() 
+				{
+					callback.call("onProductsVerified", new Object[] {sd.productId, sd.title, sd.description, sd.priceText});
+				}
+			}
+		);
 	}
 	
 	public static void setPublicKey(String s)
-	{
+	{		
 		publicKey = s;
-		com.blundell.test.BillingSecurity.pk = AndroidBilling.publicKey;
 	}
 	
 	public static String getPublicKey()
 	{
 		return publicKey;
+	}
+	
+	@Override
+	public void onBillingInitialized() {				
+		/*
+		 * Called when BillingProcessor was initialized and its ready to purchase 
+		 */
+		Log.i("IAP", "Transaction Ready");
+		
+		GameActivity.getInstance().runOnUiThread
+		(
+			new Runnable()
+			{ 
+				public void run() 
+				{
+					callback.call("onStarted", new Object[] {});
+				}
+			}
+		);
+	}
+
+	@Override
+	public void onProductPurchased(final String productId, TransactionDetails details) 
+	{
+		/*
+		 * Called when requested PRODUCT ID was successfully purchased
+		 */
+		
+		Log.i("IAP", "Transaction Succeeded");
+		
+		GameActivity.getInstance().runOnUiThread
+		(
+			new Runnable()
+			{ 
+				public void run() 
+				{
+					callback.call("onPurchase", new Object[] {productId});
+				}
+			}
+		);
+	}
+
+	@Override
+	public void onBillingError(int errorCode, Throwable error) 
+	{
+		/*
+		 * Called when some error occured. See Constants class for more details
+		 */
+		Log.i("IAP", "Transaction Failed");
+		
+		GameActivity.getInstance().runOnUiThread
+		(
+			new Runnable()
+			{ 
+				public void run() 
+				{
+					callback.call("onFailedPurchase", new Object[] {lastPurchaseAttempt});
+					callback.call("onCanceledPurchase", new Object[] {lastPurchaseAttempt});
+				}
+			}
+		);
+	}
+
+	@Override
+	public void onPurchaseHistoryRestored() {
+		/*
+		 * Called when purchase history was restored and the list of all owned PRODUCT ID's 
+		 * was loaded from Google Play
+		 */
+		Log.i("IAP", "Purchases Restored");
+		
+		GameActivity.getInstance().runOnUiThread
+		(
+			new Runnable()
+			{ 
+				public void run() 
+				{
+					callback.call("onRestorePurchases", new Object[] {});
+				}
+			}
+		);
+		
 	}
 }

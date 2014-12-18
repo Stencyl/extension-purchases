@@ -69,10 +69,12 @@ class Purchases
 		Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_RESTORE, ""));
 	}
 
-	public function onProductsVerified()
+	public function onProductsVerified(productID:String, title:String, desc:String, price:String)
 	{
 		trace("Purchases: Products Verified");
-		Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_PRODUCTS_VERIFIED, ""));
+		
+		detailMap.set(productID, [title,desc,price]);
+		Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_PRODUCTS_VERIFIED, productID));
 	}
 		
 	//---------------------------------------------
@@ -310,11 +312,19 @@ class Purchases
 
 	public static function requestProductInfo(productIDlist:Array<Dynamic>):Void 
 	{
-		#if(cpp && mobile && !android)
 		var productIDcommalist:String = productIDlist.join(",");
+		
+		#if(cpp && mobile && !android)		
 		purchases_requestProductInfo(productIDcommalist);
-		#else
-		// TODO?
+		#end
+		
+		#if(android)
+		if(funcPurchaseInfo == null)
+		{
+			funcPurchaseInfo = nme.JNI.createStaticMethod("AndroidBilling", "purchaseInfo", "(Ljava/lang/String;)V", true);
+		}
+		
+		funcPurchaseInfo([productIDcommalist]);
 		#end
 	}
 
@@ -322,27 +332,48 @@ class Purchases
 	{
 		#if(cpp && mobile && !android)
 		return purchases_title(productID);
-		#else
-		return "None";
 		#end
+		
+		#if (android)	
+		if (detailMap.get(productID) != null)
+		{
+			return detailMap.get(productID)[0];
+		}
+		#end
+		
+		return "None";
 	}
 	
 	public static function getDescription(productID:String):String 
 	{
 		#if(cpp && mobile && !android)
 		return purchases_desc(productID);
-		#else
-		return "None";
 		#end
+		
+		#if (android)	
+		if (detailMap.get(productID) != null)
+		{
+			return detailMap.get(productID)[1];
+		}
+		#end
+		
+		return "None";
 	}
 	
 	public static function getPrice(productID:String):String 
 	{
 		#if(cpp && mobile && !android)
 		return purchases_price(productID);
-		#else
-		return "None";
 		#end
+		
+		#if (android)	
+		if (detailMap.get(productID) != null)
+		{
+			return detailMap.get(productID)[2];
+		}
+		#end
+		
+		return "None";
 	}
 	
 	public static function canBuy():Bool 
@@ -359,13 +390,27 @@ class Purchases
 		#if(cpp && mobile && !android)
 		purchases_release();
 		#end
+		
+		#if(android)
+		if(funcRelease == null)
+		{
+			funcRelease = nme.JNI.createStaticMethod("AndroidBilling", "release", "()V", true);
+		}
+		
+		funcRelease([]);
+		#end
 	}
 	
 	#if android
+	private static var detailMap:Map<String, Array<String>> = new Map < String, Array<String> > ();
 	private static var funcInit:Dynamic;
 	private static var funcBuy:Dynamic;
+	private static var funcSub:Dynamic;
 	private static var funcRestore:Dynamic;
+	private static var funcRelease:Dynamic;
 	private static var funcTest:Dynamic;
+	private static var funcPurchaseInfo:Dynamic;
+	private static var funcSubInfo:Dynamic;
 	#end
 
 	#if(cpp && mobile && !android)

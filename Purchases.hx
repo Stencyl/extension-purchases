@@ -274,13 +274,22 @@ class Purchases
 	//Uses up a "consumable" (decrements its count by 1).
 	public static function use(productID:String)
 	{
-		#if(cpp && mobile)
+		#if(cpp && mobile && !android)
 		if(hasBought(productID))
 		{
 			items.set(productID, items.get(productID) - 1);
 			save();
 		}
 		#end
+		
+		#if(android)
+		if(funcUse == null)
+		{
+			funcUse = nme.JNI.createStaticMethod("AndroidBilling", "use", "(Ljava/lang/String;)V", true);
+		}
+		
+		funcUse([productID]);
+		#end	
 	}
 	
 	public static function getQuantity(productID:String):Int
@@ -405,6 +414,7 @@ class Purchases
 	#if android	
 	private static var funcInit:Dynamic;
 	private static var funcBuy:Dynamic;
+	private static var funcUse:Dynamic;
 	private static var funcSub:Dynamic;
 	private static var funcRestore:Dynamic;
 	private static var funcRelease:Dynamic;

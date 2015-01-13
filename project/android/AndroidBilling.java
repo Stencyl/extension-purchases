@@ -59,6 +59,14 @@ public class AndroidBilling extends Extension implements BillingProcessor.IBilli
 		bp.purchase(productID);
 	}
 	
+	public static void use(String productID)
+	{
+		Log.i("IAP", "Attempt to consume: " + productID);
+		
+		//Run on UI?
+		bp.consumePurchase(productID);
+	}
+	
 	public static void subscribe(String productID)
 	{
 		Log.i("IAP", "Attempt to Subscribe: " + productID);		

@@ -1,24 +1,22 @@
 package;
 
-#if cpp
-import cpp.Lib;
-#elseif neko
-import neko.Lib;
-#else
-import nme.Lib;
-#end
+import openfl.Lib;
 
 #if !js
-import nme.net.SharedObject;
-import nme.net.SharedObjectFlushStatus;
+import openfl.net.SharedObject;
+import openfl.net.SharedObjectFlushStatus;
+#end
+
+#if android
+import openfl.utils.JNI;
 #end
 
 import com.stencyl.Engine;
 import com.stencyl.event.EventMaster;
 import com.stencyl.event.StencylEvent;
 
-import nme.events.EventDispatcher;
-import nme.events.Event;
+import openfl.events.EventDispatcher;
+import openfl.events.Event;
 
 class Purchases
 {	
@@ -169,7 +167,7 @@ class Purchases
 		#if android
 		if(funcInit == null)
 		{
-			funcInit = nme.JNI.createStaticMethod("AndroidBilling", "initialize", "(Ljava/lang/String;Lorg/haxe/nme/HaxeObject;)V", true);
+			funcInit = JNI.createStaticMethod("AndroidBilling", "initialize", "(Ljava/lang/String;Lorg/haxe/lime/HaxeObject;)V", true);
 			load();
 		}
 		
@@ -189,7 +187,7 @@ class Purchases
 		#if(android)
 		if(funcRestore == null)
 		{
-			funcRestore = nme.JNI.createStaticMethod("AndroidBilling", "restore", "()V", true);
+			funcRestore = JNI.createStaticMethod("AndroidBilling", "restore", "()V", true);
 		}
 		
 		funcRestore([]);
@@ -285,7 +283,7 @@ class Purchases
 		#if(android)
 		if(funcUse == null)
 		{
-			funcUse = nme.JNI.createStaticMethod("AndroidBilling", "use", "(Ljava/lang/String;)V", true);
+			funcUse = JNI.createStaticMethod("AndroidBilling", "use", "(Ljava/lang/String;)V", true);
 		}
 		
 		funcUse([productID]);
@@ -313,7 +311,7 @@ class Purchases
 		#if(android)
 		if(funcBuy == null)
 		{
-			funcBuy = nme.JNI.createStaticMethod("AndroidBilling", "buy", "(Ljava/lang/String;)V", true);
+			funcBuy = JNI.createStaticMethod("AndroidBilling", "buy", "(Ljava/lang/String;)V", true);
 		}
 		
 		funcBuy([productID]);
@@ -331,7 +329,7 @@ class Purchases
 		#if(android)
 		if(funcPurchaseInfo == null)
 		{
-			funcPurchaseInfo = nme.JNI.createStaticMethod("AndroidBilling", "purchaseInfo", "(Ljava/lang/String;)V", true);
+			funcPurchaseInfo = JNI.createStaticMethod("AndroidBilling", "purchaseInfo", "(Ljava/lang/String;)V", true);
 		}
 		
 		funcPurchaseInfo([productIDcommalist]);
@@ -404,7 +402,7 @@ class Purchases
 		#if(android)
 		if(funcRelease == null)
 		{
-			funcRelease = nme.JNI.createStaticMethod("AndroidBilling", "release", "()V", true);
+			funcRelease = JNI.createStaticMethod("AndroidBilling", "release", "()V", true);
 		}
 		
 		funcRelease([]);

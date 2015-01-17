@@ -1,6 +1,6 @@
 package;
 
-import nme.events.Event;
+import openfl.events.Event;
 
 class PurchaseEvent extends Event
 {	

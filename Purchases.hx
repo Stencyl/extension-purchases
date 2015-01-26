@@ -167,7 +167,7 @@ class Purchases
 		#if android
 		if(funcInit == null)
 		{
-			funcInit = JNI.createStaticMethod("AndroidBilling", "initialize", "(Ljava/lang/String;Lorg/haxe/lime/HaxeObject;)V", true);
+			funcInit = JNI.createStaticMethod("com/stencyl/android/AndroidBilling", "initialize", "(Ljava/lang/String;Lorg/haxe/lime/HaxeObject;)V", true);
 			load();
 		}
 		
@@ -187,7 +187,7 @@ class Purchases
 		#if(android)
 		if(funcRestore == null)
 		{
-			funcRestore = JNI.createStaticMethod("AndroidBilling", "restore", "()V", true);
+			funcRestore = JNI.createStaticMethod("com/stencyl/android/AndroidBilling", "restore", "()V", true);
 		}
 		
 		funcRestore([]);
@@ -256,8 +256,21 @@ class Purchases
 	
 	//True if they've bought this before. If consumable, if they have 1 or more of it.
 	public static function hasBought(productID:String)
-	{
-		#if(cpp && mobile)
+	{		
+		//For android, check extension for managed products first
+		#if (android)
+		if(funcIsPurchased == null)
+		{
+			funcIsPurchased = JNI.createStaticMethod("com/stencyl/android/AndroidBilling", "isPurchased", "(Ljava/lang/String;)Z", true);
+		}		
+		
+		if (funcIsPurchased([productID]))
+		{
+			return true;
+		}
+		#end
+		
+		#if (cpp && mobile)
 		if(items == null)
 		{
 			return false;
@@ -272,22 +285,30 @@ class Purchases
 	//Uses up a "consumable" (decrements its count by 1).
 	public static function use(productID:String)
 	{
-		#if(cpp && mobile && !android)
+		#if(cpp && mobile)
 		if(hasBought(productID))
 		{
 			items.set(productID, items.get(productID) - 1);
 			save();
 		}
 		#end
-		
-		#if(android)
-		if(funcUse == null)
+			
+	}
+	
+	//Allows item to be rebought on Android without consuming local count
+	public static function consume(productID:String)
+	{		
+		#if (android)
+		if(hasBought(productID))
 		{
-			funcUse = JNI.createStaticMethod("AndroidBilling", "use", "(Ljava/lang/String;)V", true);
-		}
+			if(funcUse == null)
+			{
+				funcUse = JNI.createStaticMethod("com/stencyl/android/AndroidBilling", "use", "(Ljava/lang/String;)V", true);
+			}
 		
-		funcUse([productID]);
-		#end	
+			funcUse([productID]);
+		}
+		#end
 	}
 	
 	public static function getQuantity(productID:String):Int
@@ -311,7 +332,7 @@ class Purchases
 		#if(android)
 		if(funcBuy == null)
 		{
-			funcBuy = JNI.createStaticMethod("AndroidBilling", "buy", "(Ljava/lang/String;)V", true);
+			funcBuy = JNI.createStaticMethod("com/stencyl/android/AndroidBilling", "buy", "(Ljava/lang/String;)V", true);
 		}
 		
 		funcBuy([productID]);
@@ -329,7 +350,7 @@ class Purchases
 		#if(android)
 		if(funcPurchaseInfo == null)
 		{
-			funcPurchaseInfo = JNI.createStaticMethod("AndroidBilling", "purchaseInfo", "(Ljava/lang/String;)V", true);
+			funcPurchaseInfo = JNI.createStaticMethod("com/stencyl/android/AndroidBilling", "purchaseInfo", "(Ljava/lang/String;)V", true);
 		}
 		
 		funcPurchaseInfo([productIDcommalist]);
@@ -402,7 +423,7 @@ class Purchases
 		#if(android)
 		if(funcRelease == null)
 		{
-			funcRelease = JNI.createStaticMethod("AndroidBilling", "release", "()V", true);
+			funcRelease = JNI.createStaticMethod("com/stencyl/android/AndroidBilling", "release", "()V", true);
 		}
 		
 		funcRelease([]);
@@ -414,6 +435,7 @@ class Purchases
 	private static var funcBuy:Dynamic;
 	private static var funcUse:Dynamic;
 	private static var funcSub:Dynamic;
+	private static var funcIsPurchased:Dynamic;
 	private static var funcRestore:Dynamic;
 	private static var funcRelease:Dynamic;
 	private static var funcTest:Dynamic;

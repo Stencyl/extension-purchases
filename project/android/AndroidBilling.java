@@ -1,4 +1,6 @@
 
+package com.stencyl.android;
+
 import com.anjlab.android.iab.v3.*;
 import android.app.Activity;
 import android.content.Context;
@@ -28,167 +30,206 @@ public class AndroidBilling extends Extension implements BillingProcessor.IBilli
     {
     	super();
     	
+    	Log.i("IAP", "Created Android Billing Extension Class");
+    	
     	ab = this;
     }
 	
-    public static void release() {
+	@Override
+    public void onDestroy() {
         if (bp != null) 
-        {
             bp.release();
-            bp = null;
-        }
+        
+        bp = null;
+
+        super.onDestroy();
     }
+	
+    
+	 @Override
+	 public boolean onActivityResult(int requestCode, int resultCode, Intent data) {		 
+		 if (!bp.handleActivityResult(requestCode, resultCode, data))
+			 return super.onActivityResult(requestCode, resultCode, data);
+		 
+		 return true;
+	 }
+	 
+	 public static void release() 
+	 {
+		 if (bp != null) 
+			 bp.release();
 
-	public static void initialize(String publicKey, final HaxeObject callback)
-	{
-		Log.i("IAP", "Attempt to init billing service");
-	
-		ab = new AndroidBilling();
-		AndroidBilling.callback = callback;
-		setPublicKey(publicKey);
-		
-		bp = new BillingProcessor(mainActivity, publicKey, ab);
-	}
-	
-	public static void buy(String productID)
-	{
-		Log.i("IAP", "Attempt to Buy: " + productID);		
-		lastPurchaseAttempt = productID;
-		
-		//Run on UI?
-		bp.purchase(productID);
-	}
-	
-	public static void use(String productID)
-	{
-		Log.i("IAP", "Attempt to consume: " + productID);
-		
-		//Run on UI?
-		bp.consumePurchase(productID);
-	}
-	
-	public static void subscribe(String productID)
-	{
-		Log.i("IAP", "Attempt to Subscribe: " + productID);		
-		lastPurchaseAttempt = productID;
-		
-		//Run on UI?
-		bp.subscribe(productID);
-	}
-	
-	public static void restore()
-	{
-		Log.i("IAP", "Attempt to Restore Purchases");
-	
-		bp.loadOwnedPurchasesFromGoogle();
-	}
-	
-	public static void purchaseInfo(String productID)
-	{
-		//Run on UI?
-		final SkuDetails sd = bp.getPurchaseListingDetails(productID);
-		
-		GameActivity.getInstance().runOnUiThread
-		(
-			new Runnable()
-			{ 
-				public void run() 
-				{
-					callback.call("onProductsVerified", new Object[] {sd.productId, sd.title, sd.description, sd.priceText});
-				}
-			}
-		);
-	}
-	
-	public static void setPublicKey(String s)
-	{		
-		publicKey = s;
-	}
-	
-	public static String getPublicKey()
-	{
-		return publicKey;
-	}
-	
-	@Override
-	public void onBillingInitialized() {				
-		/*
-		 * Called when BillingProcessor was initialized and its ready to purchase 
-		 */
-		Log.i("IAP", "Transaction Ready");
-		
-		GameActivity.getInstance().runOnUiThread
-		(
-			new Runnable()
-			{ 
-				public void run() 
-				{
-					callback.call("onStarted", new Object[] {});
-				}
-			}
-		);
-	}
+		 bp = null;
 
-	@Override
-	public void onProductPurchased(final String productId, TransactionDetails details) 
-	{
-		/*
-		 * Called when requested PRODUCT ID was successfully purchased
-		 */
-		
-		Log.i("IAP", "Transaction Succeeded");
-		
-		GameActivity.getInstance().runOnUiThread
-		(
-			new Runnable()
-			{ 
-				public void run() 
-				{
-					callback.call("onPurchase", new Object[] {productId});
-				}
-			}
-		);
-	}
+	 }
 
-	@Override
-	public void onBillingError(int errorCode, Throwable error) 
-	{
-		/*
-		 * Called when some error occured. See Constants class for more details
-		 */
-		Log.i("IAP", "Transaction Failed");
-		
-		GameActivity.getInstance().runOnUiThread
-		(
-			new Runnable()
-			{ 
-				public void run() 
-				{
-					callback.call("onFailedPurchase", new Object[] {lastPurchaseAttempt});
-					callback.call("onCanceledPurchase", new Object[] {lastPurchaseAttempt});
-				}
-			}
-		);
-	}
+	 public static void initialize(String publicKey, final HaxeObject callback)
+	 {
+		 Log.i("IAP", "Attempt to init billing service");
 
-	@Override
-	public void onPurchaseHistoryRestored() {
-		/*
-		 * Called when purchase history was restored and the list of all owned PRODUCT ID's 
-		 * was loaded from Google Play
-		 */
-		Log.i("IAP", "Purchases Restored");
-		
-		GameActivity.getInstance().runOnUiThread
-		(
-			new Runnable()
-			{ 
-				public void run() 
-				{
-					callback.call("onRestorePurchases", new Object[] {});
-				}
-			}
+		 AndroidBilling.callback = callback;
+		 setPublicKey(publicKey);
+
+		 bp = new BillingProcessor(mainActivity, publicKey, ab);
+	 }
+
+	 public static void buy(String productID)
+	 {
+		 Log.i("IAP", "Attempt to Buy: " + productID);		
+		 lastPurchaseAttempt = productID;
+		 
+		 //Run on UI?
+		 if (!bp.isPurchased(productID))
+		 {
+			 bp.purchase(productID);
+		 }
+		 
+		 else
+		 {
+			 Log.i("IAP", productID + "Has already been purchased.");	
+		 }
+	 }
+
+	 public static void use(String productID)
+	 {
+		 Log.i("IAP", "Attempt to consume: " + productID);
+
+		 //Run on UI?
+		 bp.consumePurchase(productID);
+	 }
+
+	 public static void subscribe(String productID)
+	 {
+		 Log.i("IAP", "Attempt to Subscribe: " + productID);		
+		 lastPurchaseAttempt = productID;
+
+		 //Run on UI?
+		 if (!bp.isPurchased(productID))
+		 {
+			 bp.subscribe(productID);
+		 }
+	 }
+	 
+	 public static boolean isPurchased(String productID)
+	 {
+		 Log.i("IAP", "Checking if bought: " + productID);
+		 
+		 return bp.isPurchased(productID);
+	 }
+
+	 public static void restore()
+	 {
+		 Log.i("IAP", "Attempt to Restore Purchases");
+
+		 bp.loadOwnedPurchasesFromGoogle();
+	 }
+
+	 public static void purchaseInfo(String productID)
+	 {
+		 //Run on UI?
+		 final SkuDetails sd = bp.getPurchaseListingDetails(productID);
+
+		 GameActivity.getInstance().runOnUiThread
+		 (
+				 new Runnable()
+				 { 
+					 public void run() 
+					 {
+						 callback.call("onProductsVerified", new Object[] {sd.productId, sd.title, sd.description, sd.priceText});
+					 }
+				 }
+		 );
+	 }
+
+	 public static void setPublicKey(String s)
+	 {		
+		 publicKey = s;
+	 }
+
+	 public static String getPublicKey()
+	 {
+		 return publicKey;
+	 }
+
+	 @Override
+	 public void onBillingInitialized() {				
+		 /*
+		  * Called when BillingProcessor was initialized and its ready to purchase 
+		  */
+		 Log.i("IAP", "Transaction Ready");
+
+		 GameActivity.getInstance().runOnUiThread
+		 (
+				 new Runnable()
+				 { 
+					 public void run() 
+					 {
+						 callback.call("onStarted", new Object[] {});
+					 }
+				 }
+		 );
+	 }
+
+	 @Override
+	 public void onProductPurchased(final String productId, TransactionDetails details) 
+	 {
+		 /*
+		  * Called when requested PRODUCT ID was successfully purchased
+		  */
+
+		 Log.i("IAP", "Transaction Succeeded");
+
+		 GameActivity.getInstance().runOnUiThread
+		 (
+				 new Runnable()
+				 { 
+					 public void run() 
+					 {
+						 callback.call("onPurchase", new Object[] {productId});
+					 }
+				 }
 		);
-		
-	}
+	 }
+
+	 @Override
+	 public void onBillingError(int errorCode, Throwable error) 
+	 {
+		 /*
+		  * Called when some error occured. See Constants class for more details
+		  */
+		 Log.i("IAP", "Transaction Failed");
+
+		 GameActivity.getInstance().runOnUiThread
+		 (
+				 new Runnable()
+				 { 
+					 public void run() 
+					 {
+						 callback.call("onFailedPurchase", new Object[] {lastPurchaseAttempt});
+						 callback.call("onCanceledPurchase", new Object[] {lastPurchaseAttempt});
+					 }
+				 }
+		 );
+	 }
+
+	 @Override
+	 public void onPurchaseHistoryRestored() {
+		 /*
+		  * Called when purchase history was restored and the list of all owned PRODUCT ID's 
+		  * was loaded from Google Play
+		  */
+		 Log.i("IAP", "Purchases Restored");
+
+		 GameActivity.getInstance().runOnUiThread
+		 (
+				 new Runnable()
+				 { 
+					 public void run() 
+					 {
+						 callback.call("onRestorePurchases", new Object[] {});
+					 }
+				 }
+		 );
+
+	 }
 }

@@ -121,7 +121,11 @@ public class AndroidBilling extends Extension implements BillingProcessor.IBilli
 	 {
 		 Log.i("IAP", "Attempt to Restore Purchases");
 
-		 bp.loadOwnedPurchasesFromGoogle();
+		 if(bp.loadOwnedPurchasesFromGoogle())
+		 {
+			 bp.setPurchaseHistoryRestored();
+			 ab.onPurchaseHistoryRestored();
+		 }
 	 }
 
 	 public static void purchaseInfo(String productID)

@@ -230,7 +230,15 @@ public class AndroidBilling extends Extension implements BillingProcessor.IBilli
 				 { 
 					 public void run() 
 					 {
-						 callback.call("onRestorePurchases", new Object[] {});
+						 if (bp.listOwnedProducts().size() == 0)
+						 {
+							 Log.i("IAP", "No Managed Products Owned");
+						 }
+						 
+						 for (String item: bp.listOwnedProducts())
+						 {
+							 callback.call("onRestorePurchases", new Object[] {item});
+						 }
 					 }
 				 }
 		 );

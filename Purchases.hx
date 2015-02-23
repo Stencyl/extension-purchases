@@ -61,10 +61,10 @@ class Purchases
 		Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_CANCEL, productID));
 	}
 	
-	public function onRestorePurchases()
+	public function onRestorePurchases(productID:String)
 	{
 		trace("Purchases: Restored Purchase");
-		Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_RESTORE, ""));
+		Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_RESTORE, productID));
 	}
 
 	public function onProductsVerified(productID:String, title:String, desc:String, price:String)

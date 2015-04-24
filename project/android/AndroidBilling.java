@@ -133,8 +133,10 @@ public class AndroidBilling extends Extension implements BillingProcessor.IBilli
 		 //Run on UI?
 		 final SkuDetails sd = bp.getPurchaseListingDetails(productID);
 
-		 GameActivity.getInstance().runOnUiThread
-		 (
+		 if (sd != null)
+		 {				 		 
+			 GameActivity.getInstance().runOnUiThread
+			 (
 				 new Runnable()
 				 { 
 					 public void run() 
@@ -142,7 +144,8 @@ public class AndroidBilling extends Extension implements BillingProcessor.IBilli
 						 callback.call("onProductsVerified", new Object[] {sd.productId, sd.title, sd.description, sd.priceText});
 					 }
 				 }
-		 );
+			 );
+		 }
 	 }
 
 	 public static void setPublicKey(String s)

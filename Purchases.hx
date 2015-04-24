@@ -169,6 +169,8 @@ class Purchases
 		{
 			funcInit = JNI.createStaticMethod("com/stencyl/android/AndroidBilling", "initialize", "(Ljava/lang/String;Lorg/haxe/lime/HaxeObject;)V", true);
 			load();
+			
+			initialized = true;
 		}
 		
 		var args = new Array<Dynamic>();
@@ -206,7 +208,7 @@ class Purchases
 			{
 				items = saveData;
 				trace(items);
-			}
+			}					
 		}
 		
 		catch(e:Dynamic) 

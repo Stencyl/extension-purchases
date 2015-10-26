@@ -29,6 +29,10 @@ class Purchases
 	{
 		trace("Purchases: Started");
 		Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_READY, ""));
+		
+		#if (android)
+		initialized = true;
+		#end
 	}
 	
 	public function onPurchase(productID:String)
@@ -168,9 +172,7 @@ class Purchases
 		if(funcInit == null)
 		{
 			funcInit = JNI.createStaticMethod("com/stencyl/android/AndroidBilling", "initialize", "(Ljava/lang/String;Lorg/haxe/lime/HaxeObject;)V", true);
-			load();
-			
-			initialized = true;
+			load();			
 		}
 		
 		var args = new Array<Dynamic>();
@@ -412,7 +414,7 @@ class Purchases
 		#if(cpp && mobile && !android)
 		return purchases_canbuy();
 		#else
-		return false;
+		return initialized;
 		#end
 	}
 	

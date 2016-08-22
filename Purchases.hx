@@ -20,24 +20,39 @@ import openfl.events.Event;
 
 class Purchases
 {	
+	#if(android)
 	//Used for Android callbacks from Java
+	private static var purchaseMap:Map<String, Array<String>> = new Map < String, Array<String> > ();
+	
 	public function new()
 	{
 	}
 	
-	public function onStarted()
+	public function onStarted(response:String)
 	{
-		trace("Purchases: Started");
-		Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_READY, ""));
-		
-		#if (android)
-		initialized = true;
-		#end
+		if (response == "Success") {
+			trace("Purchases: Started");
+			#if (android)
+			initialized = true;
+			#end
+			Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_READY, ""));
+		} else {
+			trace("Purchases: Faild to Start");
+			#if (android)
+			initialized = false;
+			#end
+		}
 	}
 	
-	public function onPurchase(productID:String)
+	//public function onPurchase(productID:String)
+	public function onPurchase(productID:String, response:String, itemType:String, signature:String)
 	{
 		trace("Purchases: Successful Purchase");
+		
+		if(!purchaseMap.exists(productID)){
+			purchaseMap.set(productID, [response,itemType,signature]);
+		}
+		
 		Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_SUCCESS, productID));
 		
 		if(hasBought(productID))
@@ -65,9 +80,25 @@ class Purchases
 		Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_CANCEL, productID));
 	}
 	
-	public function onRestorePurchases(productID:String)
+	public function onRestorePurchases(productID:String, response:String, itemType:String, signature:String)
 	{
 		trace("Purchases: Restored Purchase");
+		if(!purchaseMap.exists(productID)){
+			purchaseMap.set(productID, [response,itemType,signature]);
+		
+			if(hasBought(productID))
+			{
+				items.set(productID, Purchases.items.get(productID) + 1);
+			}
+			
+			else
+			{
+				items.set(productID, 1);
+			}
+		
+			save();
+		}
+		
 		Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_RESTORE, productID));
 	}
 
@@ -78,13 +109,13 @@ class Purchases
 		detailMap.set(productID, [title,desc,price]);
 		Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_PRODUCTS_VERIFIED, productID));
 	}
-		
+	#end	
 	//---------------------------------------------
 
 	private static var initialized:Bool = false;
 	private static var items:Map<String,Int> = new Map<String,Int>();
 	private static var detailMap:Map<String, Array<String>> = new Map < String, Array<String> > ();
-
+	
 	private static function registerHandle()
 	{
 		#if(cpp && mobile && !android)
@@ -125,6 +156,20 @@ class Purchases
 		else if(type == "restore")
 		{
 			trace("Purchases: Restored Purchase");
+			var productID = data;
+			
+			if(hasBought(productID))
+			{
+				items.set(productID, Purchases.items.get(productID) + 1);
+			}
+			
+			else
+			{
+				items.set(productID, 1);
+			}
+		
+			save();
+			
 			Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_RESTORE, data));
 		}
 
@@ -305,12 +350,11 @@ class Purchases
 		#if (android)
 		if(hasBought(productID))
 		{
-			if(funcUse == null)
-			{
-				funcUse = JNI.createStaticMethod("com/stencyl/android/AndroidBilling", "use", "(Ljava/lang/String;)V", true);
+			if (funcConsume == null) {
+				funcConsume = JNI.createStaticMethod ("com/stencyl/android/AndroidBilling", "consume", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V");
 			}
-		
-			funcUse([productID]);
+			
+			funcConsume (purchaseMap.get(productID)[0], purchaseMap.get(productID)[1], purchaseMap.get(productID)[2]);
 		}
 		#end
 	}
@@ -437,14 +481,14 @@ class Purchases
 	#if android	
 	private static var funcInit:Dynamic;
 	private static var funcBuy:Dynamic;
-	private static var funcUse:Dynamic;
+	private static var funcConsume:Dynamic;
 	private static var funcSub:Dynamic;
-	private static var funcIsPurchased:Dynamic;
 	private static var funcRestore:Dynamic;
 	private static var funcRelease:Dynamic;
 	private static var funcTest:Dynamic;
 	private static var funcPurchaseInfo:Dynamic;
 	private static var funcSubInfo:Dynamic;
+	private static var funcIsPurchased:Dynamic;
 	#end
 
 	#if(cpp && mobile && !android)

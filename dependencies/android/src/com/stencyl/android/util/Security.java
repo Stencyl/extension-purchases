@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-package com.anjlab.android.iab.v3;
+package com.stencyl.android.util;
 
 import android.text.TextUtils;
 import android.util.Base64;
@@ -37,7 +37,7 @@ import java.security.spec.X509EncodedKeySpec;
  * make it harder for an attacker to replace the code with stubs that treat all
  * purchases as verified.
  */
-class Security {
+public class Security {
     private static final String TAG = "IABUtil/Security";
 
     private static final String KEY_FACTORY_ALGORITHM = "RSA";
@@ -62,6 +62,28 @@ class Security {
         PublicKey key = Security.generatePublicKey(base64PublicKey);
         return Security.verify(key, signedData, signature);
     }
+    
+    /*public static boolean verifyPurchase(String base64PublicKey,
+                                         String signedData, String signature) {
+        
+        if (signedData == null) {
+            Log.e(TAG, "data is null");
+            return false;
+        }
+        
+        if (TextUtils.isEmpty(signedData) || TextUtils.isEmpty(base64PublicKey)
+            || TextUtils.isEmpty(signature)) {
+            Log.e(TAG, "Purchase verification failed: missing data.");
+            if (BuildConfig.DEBUG) {
+                
+                return true;
+            }
+            return false;
+        }
+        
+        PublicKey key = Security.generatePublicKey(base64PublicKey);
+        return Security.verify(key, signedData, signature);
+    }*/
 
     /**
      * Generates a PublicKey instance from a string containing the
@@ -80,9 +102,6 @@ class Security {
         } catch (InvalidKeySpecException e) {
             Log.e(TAG, "Invalid key specification.");
             throw new IllegalArgumentException(e);
-        } catch (IllegalArgumentException e) {
-            Log.e(TAG, "Base64 decoding failed.");
-            throw e;
         }
     }
 
@@ -96,12 +115,18 @@ class Security {
      * @return true if the data and signature match
      */
     public static boolean verify(PublicKey publicKey, String signedData, String signature) {
-        Signature sig;
+        byte[] signatureBytes;
         try {
-            sig = Signature.getInstance(SIGNATURE_ALGORITHM);
+            signatureBytes = Base64.decode(signature, Base64.DEFAULT);
+        } catch (IllegalArgumentException e) {
+            Log.e(TAG, "Base64 decoding failed.");
+            return false;
+        }
+        try {
+            Signature sig = Signature.getInstance(SIGNATURE_ALGORITHM);
             sig.initVerify(publicKey);
             sig.update(signedData.getBytes());
-            if (!sig.verify(Base64.decode(signature, Base64.DEFAULT))) {
+            if (!sig.verify(signatureBytes)) {
                 Log.e(TAG, "Signature verification failed.");
                 return false;
             }
@@ -112,8 +137,6 @@ class Security {
             Log.e(TAG, "Invalid key specification.");
         } catch (SignatureException e) {
             Log.e(TAG, "Signature exception.");
-        } catch (IllegalArgumentException e) {
-            Log.e(TAG, "Base64 decoding failed.");
         }
         return false;
     }

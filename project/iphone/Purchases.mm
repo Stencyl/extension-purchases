@@ -5,153 +5,246 @@
 #include "PurchaseEvent.h"
 
 extern "C" void sendPurchaseEvent(const char* type, const char* data);
+extern "C" void sendPurchaseFinishEvent(const char* type, const char* data, const char* receiptString, const char* transactionID);
+extern "C" void sendPurchaseProductDataEvent(const char* type, const char* data, const char* localizedTitle, const char* localizedDescription, const char* localizedPrice);
 
 @interface InAppPurchase: NSObject <SKProductsRequestDelegate, SKPaymentTransactionObserver>
 {
-	SKProductsRequest* productsRequest;
-	NSMutableDictionary* authorizedProducts;
-	BOOL arePurchasesEnabled;
+    SKProductsRequest* productsRequest;
+    NSString* _productID;
+    NSMutableDictionary* authorizedProducts;
+    BOOL arePurchasesEnabled;
+    BOOL prodURL;
+    BOOL validatedSucceed;
 }
+
+@property (nonatomic, assign) BOOL arePurchasesEnabled;
+@property (nonatomic, assign) BOOL prodURL;
+@property (nonatomic, assign) BOOL validatedSucceed;
 
 - (void)initInAppPurchase;
 - (void)restorePurchases;
 - (BOOL)canMakePurchases;
 - (void)purchaseProduct:(NSString*)productId;
-- (void)requestProductInfo:(NSMutableSet*)productIdentifiers;
-- (const char*)getProductTitle:(NSString*)productId;
-- (const char*)getProductDescription:(NSString*)productId;
-- (const char*)getProductPrice:(NSString*)productId;
+- (void)requestProductInfo:(NSString*)productIdentifiers;
+- (void)checkReceipt:(NSString*)receiptString withSHARED_SECRET:(NSString*)SHARED_SECRET;
 
 @end
 
 @implementation InAppPurchase
 
+@synthesize arePurchasesEnabled;
+@synthesize prodURL;
+@synthesize validatedSucceed;
+
 #pragma mark - Public methods
 
 - (void)initInAppPurchase
 {
+    NSLog(@"Purchases initialize");
 	[[SKPaymentQueue defaultQueue] addTransactionObserver:self];
 	sendPurchaseEvent("started", "");
-	productsRequest = nil;
-	authorizedProducts = [[NSMutableDictionary alloc] init];
-	arePurchasesEnabled = NO;
+    authorizedProducts = [[NSMutableDictionary alloc] init];
+    arePurchasesEnabled = NO;
 }
 
 - (void)restorePurchases
 {
-	[[SKPaymentQueue defaultQueue] restoreCompletedTransactions];
+    NSLog(@"starting restore");
+    [[SKPaymentQueue defaultQueue] restoreCompletedTransactions];
 }
 
 - (BOOL)canMakePurchases
 {
-	return (arePurchasesEnabled && [SKPaymentQueue canMakePayments]);
+    return (arePurchasesEnabled && [SKPaymentQueue canMakePayments]);
 }
 
 - (void)purchaseProduct:(NSString*)productId
 {
-	if(!arePurchasesEnabled || ![SKPaymentQueue canMakePayments])
-	{
-		sendPurchaseEvent("failed", [productId UTF8String]);
-		return;
-	}
-
-	SKProduct *skProduct = [authorizedProducts objectForKey:productId];
-	if(skProduct)
-	{
-		SKPayment *payment = [SKPayment paymentWithProduct:skProduct];
-		[[SKPaymentQueue defaultQueue] addPayment:payment];
-		return;
-	}
-
-	sendPurchaseEvent("failed", [productId UTF8String]);
+    if(!arePurchasesEnabled || ![SKPaymentQueue canMakePayments])
+    {
+        sendPurchaseEvent("failed", [productId UTF8String]);
+        return;
+    }
+    
+    SKProduct *skProduct = [authorizedProducts objectForKey:productId];
+    if(skProduct)
+    {
+        SKPayment *payment = [SKPayment paymentWithProduct:skProduct];
+        [[SKPaymentQueue defaultQueue] addPayment:payment];
+        return;
+    }
+    
+    sendPurchaseEvent("failed", [productId UTF8String]);
 }
 
-// Multiple requests can be made, they'll be added into authorized list if not already there.
-- (void)requestProductInfo:(NSMutableSet*)productIdentifiers
+- (void)requestProductInfo:(NSString*)productIdentifiers
 {
-	if(productsRequest != nil)
-	{ // A previous request is still pending, probably because of lost connection to App Store
-		[productsRequest release];
-	}
-	arePurchasesEnabled = NO;
+    if(productsRequest != nil)
+    { // A previous request is still pending, probably because of lost connection to App Store
+        [productsRequest release];
+    }
+    
+    arePurchasesEnabled = NO;
+    
+    _productID = productIdentifiers;
 
-	productsRequest = [[SKProductsRequest alloc] initWithProductIdentifiers:productIdentifiers];
-	productsRequest.delegate = self;
-	[productsRequest start];
+    NSSet *productIdentifiersSet = [NSSet setWithArray:[productIdentifiers componentsSeparatedByString:@","] ];
+    productsRequest = [[SKProductsRequest alloc] initWithProductIdentifiers:productIdentifiersSet];
+    productsRequest.delegate = self;
+    [productsRequest start];
+    
 }
 
-- (const char*)getProductTitle:(NSString*)productId
-{
-	SKProduct *skProduct = [authorizedProducts objectForKey:productId];
-	if(skProduct)
-	{
-		if(skProduct.localizedTitle != nil) // nil will crash app
-		{
-			return [skProduct.localizedTitle cStringUsingEncoding:NSUTF8StringEncoding];
-		}
-	}
-
-	return "None";
-}
-
-- (const char*)getProductDescription:(NSString*)productId
-{
-	SKProduct *skProduct = [authorizedProducts objectForKey:productId];
-	if(skProduct)
-	{
-		if(skProduct.localizedDescription != nil) // nil will crash app
-		{
-			return [skProduct.localizedDescription cStringUsingEncoding:NSUTF8StringEncoding];
-		}
-	}
-
-	return "None";
-}
-
-- (const char*)getProductPrice:(NSString*)productId
-{
-	SKProduct *skProduct = [authorizedProducts objectForKey:productId];
-	if(skProduct)
-	{
-		NSNumberFormatter *numberFormatter = [[NSNumberFormatter alloc] init];
-		[numberFormatter setFormatterBehavior:NSNumberFormatterBehavior10_4];
-		[numberFormatter setNumberStyle:NSNumberFormatterCurrencyStyle];
-		[numberFormatter setLocale:skProduct.priceLocale];
-		NSString *formattedString = [numberFormatter stringFromNumber:skProduct.price];
-		[numberFormatter release];
-
-		// Replace Euro UTF-16 with pseudo Unicode if it's in there.
-		NSString *euroSymbol = [NSString stringWithFormat:@"%C", 0x20AC]; // UTF-16
-		NSString *euroPseudo = @"~x20AC"; // Stencyl's pseudo Unicode ~x
-		formattedString = [formattedString stringByReplacingOccurrencesOfString:euroSymbol withString:euroPseudo];
-
-		return [formattedString cStringUsingEncoding:NSUTF8StringEncoding];
-	}
-
-	return "None";
+-(void)checkReceipt:(NSString*)receiptString withSHARED_SECRET:(NSString*)SHARED_SECRET{
+    // verifies receipt with Apple
+    
+    if(!_productID){
+        validatedSucceed = NO;
+    }
+    
+    NSError *jsonError = nil;
+    
+    NSString *receiptBase64 = receiptString;
+    //NSLog(@"Receipt Base64: %@",receiptBase64);
+    
+    NSData *jsonData = [NSJSONSerialization dataWithJSONObject:[NSDictionary dictionaryWithObjectsAndKeys:
+                                                                receiptBase64,@"receipt-data",
+                                                                SHARED_SECRET,@"password",
+                                                                nil]
+                                                       options:NSJSONWritingPrettyPrinted
+                                                         error:&jsonError
+                        ];
+    //NSLog(@"%@",jsonData);
+    NSError * error=nil;
+    NSDictionary * parsedData = [NSJSONSerialization JSONObjectWithData:jsonData options:kNilOptions error:&error];
+    //NSLog(@"%@",parsedData);
+    //NSLog(@"JSON: %@",[[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding]);
+    
+    // URL for sandbox receipt validation; replace "sandbox" with "buy" in production or you will receive
+    // error codes 21006 or 21007
+    
+    NSURL *requestURL;
+    if(prodURL){
+       requestURL = [NSURL URLWithString:@"https://buy.itunes.apple.com/verifyReceipt"];
+    }else{
+       requestURL = [NSURL URLWithString:@"https://sandbox.itunes.apple.com/verifyReceipt"];
+    }
+    
+    NSMutableURLRequest *req = [[NSMutableURLRequest alloc] initWithURL:requestURL];
+    [req setHTTPMethod:@"POST"];
+    [req setHTTPBody:jsonData];
+    
+    
+    NSOperationQueue *queue = [[NSOperationQueue alloc] init];
+    [NSURLConnection sendAsynchronousRequest:req queue:queue
+                           completionHandler:^(NSURLResponse *response, NSData *data, NSError *connectionError) {
+                               if (connectionError) {
+                                    NSLog(@"Connection Error : %@",connectionError);
+                                   
+                                   /* ... Handle error ... */
+                                   validatedSucceed = NO;
+                               } else {
+                                   NSError *error;
+                                   NSDictionary *jsonResponse = [NSJSONSerialization JSONObjectWithData:data options:0 error:&error];
+                                   //NSLog(@"Respond : %@",jsonResponse);
+                                   if (!jsonResponse) {
+                                       /* ... Handle error ...*/
+                                       NSLog(@"No response");
+                                       validatedSucceed = NO;
+                                       
+                                   }
+                                   
+                                   NSString *status = [jsonResponse objectForKey:@"status"];
+                                   
+                                   NSNumber *myNumber = [jsonResponse objectForKey:@"status"];
+                                   int value = abs(myNumber.intValue);
+                                   
+                                   
+                                   NSLog(@"Receipt Status %@", status);
+                                   
+                                   if (value == 0) {
+                                       
+                                       NSLog(@"Joehoe you Receipt is valid");
+                                       
+                                       NSLog(@"Receipt ProductID: %@", _productID);
+                        
+                                       //sendPurchaseEvent("validated", [_productID UTF8String]); //game is crashing
+                                       
+                                       validatedSucceed = YES;
+                                           
+                                   }else{
+                                       
+                                       NSLog(@"Faild to validate Status: %@", status);
+                                       //sendPurchaseEvent("failed", [_productID UTF8String]); //game is crashing
+                                       validatedSucceed = NO;
+                                   }
+                                   
+                               }
+                           }];
+    
 }
 
 #pragma mark - SKProductsRequestDelegate methods
 
-- (void)productsRequest:(SKProductsRequest*)request didReceiveResponse:(SKProductsResponse*)response
+- (void)request:(SKProductsRequest *)request didFailWithError:(NSError *)error
 {
-	NSArray *skProducts = response.products;
-	for (SKProduct *skProduct in skProducts)
-	{ // Add requested products, replacing duplicates that are already in there.
-		[authorizedProducts setObject:skProduct forKey:[skProduct productIdentifier]];
-	}
-
-	[productsRequest release];
-	productsRequest = nil;
-	arePurchasesEnabled = YES;
-	sendPurchaseEvent("productsVerified", "");
+    [productsRequest release];
+    productsRequest = nil;
+    arePurchasesEnabled = NO;
 }
 
-- (void)request:(SKRequest*)request didFailWithError:(NSError*)error
+- (void)productsRequest:(SKProductsRequest*)request didReceiveResponse:(SKProductsResponse*)response
 {
-	[productsRequest release];
-	productsRequest = nil;
-	arePurchasesEnabled = NO;
+    
+    NSArray *skProducts = response.products;
+    NSString *formattedString;
+    SKProduct *skProduct;
+    for (skProduct in skProducts)
+    { // Add requested products, replacing duplicates that are already in there.
+        [authorizedProducts setObject:skProduct forKey:[skProduct productIdentifier]];
+    }
+    
+    [productsRequest release];
+    productsRequest = nil;
+    arePurchasesEnabled = YES;
+    
+    if(!_productID){
+        return;
+    }
+    
+    skProduct = [authorizedProducts objectForKey:_productID];
+    if(skProduct)
+    {
+        if(skProduct.localizedTitle != nil) // nil will crash app
+        {
+            NSLog(@"Title: %@",skProduct.localizedTitle);
+        }
+        if(skProduct.localizedDescription != nil) // nil will crash app
+        {
+            NSLog(@"Description: %@",skProduct.localizedDescription);
+        }
+        
+        NSNumberFormatter *numberFormatter = [[NSNumberFormatter alloc] init];
+        [numberFormatter setFormatterBehavior:NSNumberFormatterBehavior10_4];
+        [numberFormatter setNumberStyle:NSNumberFormatterCurrencyStyle];
+        [numberFormatter setLocale:skProduct.priceLocale];
+        formattedString = [numberFormatter stringFromNumber:skProduct.price];
+        [numberFormatter release];
+        
+        // Replace Euro UTF-16 with pseudo Unicode if it's in there.
+        NSString *euroSymbol = [NSString stringWithFormat:@"%C", 0x20AC]; // UTF-16
+        NSString *euroPseudo = @"~x20AC"; // Stencyl's pseudo Unicode ~x
+        formattedString = [formattedString stringByReplacingOccurrencesOfString:euroSymbol withString:euroPseudo];
+        
+        NSLog(@"Price: %@",formattedString);
+    }
+    
+    if(skProduct.localizedTitle != nil || skProduct.localizedDescription != nil){
+        
+         sendPurchaseProductDataEvent("productsVerified", [skProduct.productIdentifier UTF8String], [skProduct.localizedTitle UTF8String], [skProduct.localizedDescription UTF8String],[formattedString UTF8String]);
+    }
+                
 }
 
 #pragma mark - SKPaymentTransactionObserver and Purchase helper methods
@@ -160,26 +253,43 @@ extern "C" void sendPurchaseEvent(const char* type, const char* data);
 {
 	if(wasSuccessful)
 	{
-		sendPurchaseEvent("success", [transaction.payment.productIdentifier UTF8String]);
+        
+        NSLog(@"Transaction finished successful");
+        
+        NSURL *receiptURL = [[NSBundle mainBundle] appStoreReceiptURL];
+        NSData *receipt = [NSData dataWithContentsOfURL:receiptURL];
+        NSString *jsonObjectString = [receipt base64EncodedStringWithOptions:0];
+        
+        _productID = transaction.payment.productIdentifier;
+        
+        if(!receipt){
+            return;
+        }
+        
+        sendPurchaseFinishEvent("success", [transaction.payment.productIdentifier UTF8String],[jsonObjectString UTF8String],[transaction.transactionIdentifier UTF8String]);
 	}
 
 	else
 	{
-		sendPurchaseEvent("failed", [transaction.payment.productIdentifier UTF8String]);
+        NSLog(@"Failed Purchase");
+        if (transaction.error.code != SKErrorPaymentCancelled)
+        {
+            NSLog(@"Transaction error: %@", transaction.error.localizedDescription);
+        }
+        sendPurchaseEvent("failed", [transaction.payment.productIdentifier UTF8String]);
 	}
-
-	[[SKPaymentQueue defaultQueue] finishTransaction:transaction];
 }
 
 - (void)completeTransaction:(SKPaymentTransaction*)transaction
 {
+    NSLog(@"Finish Transaction");
 	[self finishTransaction:transaction wasSuccessful:YES];
 }
 
 - (void)restoreTransaction:(SKPaymentTransaction*)transaction
 {
-	sendPurchaseEvent("restore", [transaction.originalTransaction.payment.productIdentifier UTF8String]);
-	[self finishTransaction:transaction wasSuccessful:YES];
+    sendPurchaseEvent("restore", [transaction.originalTransaction.payment.productIdentifier UTF8String]);
+    [self finishTransaction:transaction wasSuccessful:YES];
 }
 
 - (void)failedTransaction:(SKPaymentTransaction*)transaction
@@ -230,7 +340,7 @@ extern "C" void sendPurchaseEvent(const char* type, const char* data);
 				break;
 
 			case SKPaymentTransactionStateRestored:
-			[self restoreTransaction:transaction];
+                [self restoreTransaction:transaction];
 			break;
 
 			default:
@@ -239,17 +349,21 @@ extern "C" void sendPurchaseEvent(const char* type, const char* data);
 	}
 }
 
+
 #pragma mark - More Public methods
 
 - (void)dealloc
 {
-	if(productsRequest)
-		[productsRequest release];
-
-	if(authorizedProducts)
-		[authorizedProducts release];
-
-	[super dealloc];
+    if(authorizedProducts)
+        [authorizedProducts release];
+    
+    if(productsRequest)
+        [productsRequest release];
+    
+    if(_productID)
+        [_productID release];
+    
+    [super dealloc];
 }
 
 @end
@@ -285,28 +399,30 @@ extern "C"
 		[inAppPurchase release];
 	}
 
-	void requestProductInfo(const char *inProductIDcommalist)
+	void requestProductInfo(const char *inProductID)
 	{
-		NSString *productIDs = [[NSString alloc] initWithUTF8String:inProductIDcommalist];
-		NSMutableSet *productIdentifiers = [NSMutableSet setWithArray:[productIDs componentsSeparatedByString:@","]];
-		[inAppPurchase requestProductInfo:productIdentifiers];
-	}
-
-	const char* getTitle(const char *inProductID)
-	{
-		NSString *productID = [[NSString alloc] initWithUTF8String:inProductID];
-		return [inAppPurchase getProductTitle:productID];
+        NSString *productID = [[NSString alloc] initWithUTF8String:inProductID];
+        [inAppPurchase requestProductInfo:productID];
 	}
     
-	const char* getPrice(const char *inProductID)
-	{
-		NSString *productID = [[NSString alloc] initWithUTF8String:inProductID];
-		return [inAppPurchase getProductPrice:productID];
-	}
-    
-	const char* getDescription(const char *inProductID)
-	{
-		NSString *productID = [[NSString alloc] initWithUTF8String:inProductID];
-		return [inAppPurchase getProductDescription:productID];
-	}
+    bool validateReceipt(const char *inReceipt, const char *inPassword,bool inproductionURL)
+    {
+        NSString *receipt = [[NSString alloc] initWithUTF8String:inReceipt];
+        NSString *pass = [[NSString alloc] initWithUTF8String:inPassword];
+        
+        
+        if(inproductionURL){
+            
+            inAppPurchase.prodURL = YES;
+            
+        }else{
+            
+            inAppPurchase.prodURL = NO;
+        }
+        
+        [inAppPurchase checkReceipt:receipt withSHARED_SECRET:pass];
+        
+        return inAppPurchase.validatedSucceed;
+        
+    }
 }

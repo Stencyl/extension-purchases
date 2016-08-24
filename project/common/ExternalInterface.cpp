@@ -41,29 +41,11 @@ static void purchases_buy(value productID)
 }
 DEFINE_PRIM(purchases_buy, 1);
 
-static void purchases_requestProductInfo(value productIDcommalist)
+static void purchases_requestProductInfo(value productID)
 {
-	requestProductInfo(val_string(productIDcommalist));
+	requestProductInfo(val_string(productID));
 }
 DEFINE_PRIM(purchases_requestProductInfo, 1);
-
-static value purchases_title(value productID)
-{
-	return alloc_string(getTitle(val_string(productID)));
-}
-DEFINE_PRIM(purchases_title, 1);
-
-static value purchases_desc(value productID)
-{
-	return alloc_string(getDescription(val_string(productID)));
-}
-DEFINE_PRIM(purchases_desc, 1);
-
-static value purchases_price(value productID)
-{
-	return alloc_string(getPrice(val_string(productID)));
-}
-DEFINE_PRIM(purchases_price, 1);
 
 static value purchases_canbuy() 
 {
@@ -76,6 +58,14 @@ static void purchases_release()
 	releaseInAppPurchase();
 }
 DEFINE_PRIM (purchases_release, 0);
+
+static value purchases_validate(value receipt,value password, value inproductionurl)
+{
+
+	return alloc_bool(validateReceipt(val_string(receipt),val_string(password), val_bool(inproductionurl)));
+
+}
+DEFINE_PRIM (purchases_validate, 3);
 
 #endif
 
@@ -96,4 +86,26 @@ extern "C" void sendPurchaseEvent(const char* type, const char* data)
     alloc_field(o,val_id("type"),alloc_string(type));
     alloc_field(o,val_id("data"),alloc_string(data));
     val_call1(purchaseEventHandle->get(), o);
+}
+
+extern "C" void sendPurchaseFinishEvent(const char* type, const char* data, const char* receiptString, const char* transactionID)
+{
+
+    value o = alloc_empty_object();
+    alloc_field(o,val_id("type"),alloc_string(type));
+    alloc_field(o,val_id("data"),alloc_string(data));
+    alloc_field(o,val_id("receiptString"),alloc_string(receiptString));
+   	alloc_field(o,val_id("transactionID"),alloc_string(transactionID));
+    val_call1(purchaseEventHandle->get(), o);
+}
+
+extern "C" void sendPurchaseProductDataEvent(const char* type, const char* data, const char* localizedTitle, const char* localizedDescription,const char* localizedPrice)
+{
+	value o = alloc_empty_object();
+	alloc_field(o,val_id("type"),alloc_string(type));
+	alloc_field(o,val_id("data"),alloc_string(data));
+	alloc_field(o,val_id("localizedTitle"),alloc_string(localizedTitle));
+	alloc_field(o,val_id("localizedDescription"),alloc_string(localizedDescription));
+	alloc_field(o,val_id("localizedPrice"),alloc_string(localizedPrice));
+	val_call1(purchaseEventHandle->get(), o);
 }

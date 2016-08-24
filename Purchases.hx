@@ -14,12 +14,17 @@ import openfl.utils.JNI;
 import com.stencyl.Engine;
 import com.stencyl.event.EventMaster;
 import com.stencyl.event.StencylEvent;
+import com.stencyl.behavior.Script;
+import com.stencyl.behavior.TimedTask;
 
 import openfl.events.EventDispatcher;
 import openfl.events.Event;
 
+import haxe.Json;
+
 class Purchases
 {	
+
 	#if(android)
 	//Used for Android callbacks from Java
 	private static var purchaseMap:Map<String, Array<String>> = new Map < String, Array<String> > ();
@@ -106,7 +111,9 @@ class Purchases
 	{
 		trace("Purchases: Products Verified");
 		
-		detailMap.set(productID, [title,desc,price]);
+		if(!detailMap.exists(productID)){
+			detailMap.set(productID, [title,desc,price]);
+		}
 		Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_PRODUCTS_VERIFIED, productID));
 	}
 	#end	
@@ -115,6 +122,9 @@ class Purchases
 	private static var initialized:Bool = false;
 	private static var items:Map<String,Int> = new Map<String,Int>();
 	private static var detailMap:Map<String, Array<String>> = new Map < String, Array<String> > ();
+	#if(cpp && mobile && !android)
+	private static var purchaseMap:Map<String, Array<String>> = new Map < String, Array<String> > ();
+	#end
 	
 	private static function registerHandle()
 	{
@@ -138,7 +148,23 @@ class Purchases
 		else if(type == "success")
 		{
 			trace("Purchases: Successful Purchase");
+			
+			var productID = data;
+			
+			if(!purchaseMap.exists(productID)){
+				purchaseMap.set(productID, [Reflect.field(inEvent, "receiptString"),Reflect.field(inEvent, "transactionID")]);
+			}
+				
+			if(hasBought(productID))
+			{
+				items.set(productID, Purchases.items.get(productID) + 1);
+			}else{
+				items.set(productID, 1);
+			}
+			
 			Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_SUCCESS, data));
+			
+			save();
 		}
 		
 		else if(type == "failed")
@@ -155,20 +181,6 @@ class Purchases
 		
 		else if(type == "restore")
 		{
-			trace("Purchases: Restored Purchase");
-			var productID = data;
-			
-			if(hasBought(productID))
-			{
-				items.set(productID, Purchases.items.get(productID) + 1);
-			}
-			
-			else
-			{
-				items.set(productID, 1);
-			}
-		
-			save();
 			
 			Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_RESTORE, data));
 		}
@@ -176,9 +188,15 @@ class Purchases
 		else if(type == "productsVerified")
 		{
 			trace("Purchases: Products Verified");
+			var productID = data;
+			
+			if(!detailMap.exists(productID)){
+			detailMap.set(productID, [Reflect.field(inEvent, "localizedTitle"),Reflect.field(inEvent, "localizedDescription"),Reflect.field(inEvent, "localizedPrice")]);
+			}
+			
 			Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_PRODUCTS_VERIFIED, data));
 		}
-
+		
 		//Consumable
 		if(type == "success")
 		{
@@ -406,49 +424,31 @@ class Purchases
 	}
 
 	public static function getTitle(productID:String):String 
-	{
-		#if(cpp && mobile && !android)
-		return purchases_title(productID);
-		#end
-		
-		#if (android)	
+	{	
 		if (detailMap.get(productID) != null)
 		{
 			return detailMap.get(productID)[0];
 		}
-		#end
 		
 		return "None";
 	}
 	
 	public static function getDescription(productID:String):String 
-	{
-		#if(cpp && mobile && !android)
-		return purchases_desc(productID);
-		#end
-		
-		#if (android)	
+	{	
 		if (detailMap.get(productID) != null)
 		{
 			return detailMap.get(productID)[1];
 		}
-		#end
 		
 		return "None";
 	}
 	
 	public static function getPrice(productID:String):String 
 	{
-		#if(cpp && mobile && !android)
-		return purchases_price(productID);
-		#end
-		
-		#if (android)	
 		if (detailMap.get(productID) != null)
 		{
 			return detailMap.get(productID)[2];
 		}
-		#end
 		
 		return "None";
 	}
@@ -478,6 +478,23 @@ class Purchases
 		#end
 	}
 	
+	public static function validateReceipt(productID:String,password:String,URL:Bool):Void{
+		#if(cpp && mobile && !android)
+		var receiptVar = purchaseMap.get(productID)[0];
+		
+		purchases_validate(receiptVar,password,URL);
+		
+		Script.runLater(1000 * 2, function(timeTask:TimedTask):Void
+		{
+			if(purchases_validate(receiptVar,password,URL)){
+		
+			Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_PRODUCT_VALIDATED, productID));
+			}
+			
+		}, null);
+		#end
+	}
+	
 	#if android	
 	private static var funcInit:Dynamic;
 	private static var funcBuy:Dynamic;
@@ -498,9 +515,7 @@ class Purchases
 	private static var purchases_canbuy = Lib.load("purchases", "purchases_canbuy", 0);
 	private static var purchases_release = Lib.load("purchases", "purchases_release", 0);
 	private static var purchases_requestProductInfo = Lib.load("purchases", "purchases_requestProductInfo", 1);
-	private static var purchases_title = Lib.load("purchases", "purchases_title", 1);
-	private static var purchases_desc = Lib.load("purchases", "purchases_desc", 1);
-	private static var purchases_price = Lib.load("purchases", "purchases_price", 1);
 	private static var set_event_handle = Lib.load("purchases", "purchases_set_event_handle", 1);
+	private static var purchases_validate = Lib.load("purchases", "purchases_validate", 3);
 	#end
 }

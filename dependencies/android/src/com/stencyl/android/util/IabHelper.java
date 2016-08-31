@@ -747,8 +747,8 @@ public class IabHelper {
                 throw new IabException(IABHELPER_MISSING_TOKEN, "PurchaseInfo is missing token for sku: "
                         + sku + " " + itemInfo);
             }
-
-            logDebug("Consuming sku: " + sku + ", token: " + token);
+  
+            logDebug("Consuming sku: " + sku + ", token: " + token);          
             int response = mService.consumePurchase(3, mContext.getPackageName(), token);
             if (response == BILLING_RESPONSE_RESULT_OK) {
                 logDebug("Successfully consumed sku: " + sku);
@@ -907,7 +907,7 @@ public class IabHelper {
         }
     }
 
-    void flagEndAsync() {
+    public void flagEndAsync() {
         synchronized (mAsyncInProgressLock) {
             logDebug("Ending async operation: " + mAsyncOperation);
             mAsyncOperation = "";
@@ -969,6 +969,9 @@ public class IabHelper {
                 String purchaseData = purchaseDataList.get(i);
                 String signature = signatureList.get(i);
                 String sku = ownedSkus.get(i);
+                if(sku.equals("android.test.purchased")){
+                	signature = "android.test.purchased";
+                }
                 if (Security.verifyPurchase(mSignatureBase64, purchaseData, signature)) {
                     logDebug("Sku is owned: " + sku);
                     Purchase purchase = new Purchase(itemType, purchaseData, signature);
@@ -982,10 +985,12 @@ public class IabHelper {
                     inv.addPurchase(purchase);
                 }
                 else {
+                	if(!sku.equals("android.test.purchased")){
                     logWarn("Purchase signature verification **FAILED**. Not adding item.");
                     logDebug("   Purchase data: " + purchaseData);
                     logDebug("   Signature: " + signature);
                     verificationFailed = true;
+                    }
                 }
             }
 

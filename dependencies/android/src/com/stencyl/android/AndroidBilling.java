@@ -67,7 +67,7 @@ public class AndroidBilling extends Extension
         }
     }
     
-	 @Override
+	@Override
 	 public boolean onActivityResult(int requestCode, int resultCode, Intent data) {		 
          if (inAppPurchaseHelper != null) {
              
@@ -76,7 +76,7 @@ public class AndroidBilling extends Extension
          
          return super.onActivityResult (requestCode, resultCode, data);
 	 }
-	 
+	
 
     public static void initialize (String publicKey, HaxeObject callback) {
         
@@ -136,6 +136,7 @@ public class AndroidBilling extends Extension
         // IabHelper.launchPurchaseFlow() must be called from the main activity's UI thread
         Extension.mainActivity.runOnUiThread(new Runnable() {
             public void run() {
+            	if (inAppPurchaseHelper != null) inAppPurchaseHelper.flagEndAsync();
                 try {
                     AndroidBilling.inAppPurchaseHelper.launchPurchaseFlow (Extension.mainActivity, productID, 1001, mPurchaseFinishedListener);
                 } catch (IabAsyncInProgressException e) {
@@ -158,6 +159,7 @@ public class AndroidBilling extends Extension
                                          {
              @Override public void run ()
              {
+            	 if (inAppPurchaseHelper != null) inAppPurchaseHelper.flagEndAsync();
                  
                  try {
                      final Purchase purchase = new Purchase(itemType, purchaseJson, signature);
@@ -282,7 +284,7 @@ public class AndroidBilling extends Extension
                                 
                             }else{
                                 
-                                AndroidBilling.callback.call ("onPurchase", new Object[] {purchase.getSku(),purchase.getOriginalJson(), purchase.getItemType(), purchase.getSignature()});
+                                AndroidBilling.callback.call ("onPurchase", new Object[] {purchase.getSku(),purchase.getOriginalJson(), purchase.getItemType(), "android.test.purchased"});
                             
                                 Log.i("PurchasesBuy", "SKU : " + purchase.getSku());
                                 Log.i("PurchasesBuy", "OrgJson : " + purchase.getOriginalJson());

@@ -323,20 +323,7 @@ class Purchases
 	
 	//True if they've bought this before. If consumable, if they have 1 or more of it.
 	public static function hasBought(productID:String)
-	{		
-		//For android, check extension for managed products first
-		#if (android)
-		if(funcIsPurchased == null)
-		{
-			funcIsPurchased = JNI.createStaticMethod("com/stencyl/android/AndroidBilling", "isPurchased", "(Ljava/lang/String;)Z", true);
-		}		
-		
-		if (funcIsPurchased([productID]))
-		{
-			return true;
-		}
-		#end
-		
+	{			
 		#if (cpp && mobile)
 		if(items == null)
 		{

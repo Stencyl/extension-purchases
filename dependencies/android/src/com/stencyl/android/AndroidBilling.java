@@ -189,25 +189,6 @@ public class AndroidBilling extends Extension
              } // run
          });
 	 }
-    
-    public static boolean isPurchased(String productID)
-    {
-        productIDHasPurchases = productID;
-        Log.i("Purchases", "Checking if bought: " + productID);
-        
-        Extension.mainActivity.runOnUiThread(new Runnable() {
-            public void run() {
-                try {
-                    AndroidBilling.inAppPurchaseHelper.queryInventoryAsync(mGotInventoryListenerForhasPurchase);
-                } catch(Exception e) {
-                    Log.d("Purchases", e.getMessage());
-                }
-            }
-        });
-        
-        return hasBouth;
-
-    }
 	 
 	 public static void restore()
 	 {
@@ -446,41 +427,5 @@ public class AndroidBilling extends Extension
         }
 
     };
-
-    static IabHelper.QueryInventoryFinishedListener mGotInventoryListenerForhasPurchase = new IabHelper.QueryInventoryFinishedListener() {
-
-        public void onQueryInventoryFinished(final IabResult result, final Inventory inventory) {
-            if (result.isFailure()) {
-            // handle error here
-                Extension.callbackHandler.post (new Runnable ()
-                {
-                    @Override public void run ()
-                    {
-                        Log.i("Purchases", "Failed to get hasPurchases " + result);
-                        //return;
-                        hasBouth = false;
-
-                    }
-                });
-            }
-            else
-            {
-                Extension.callbackHandler.post (new Runnable ()
-                {
-                    @Override public void run ()
-                    {
-                        if(inventory.hasPurchase(productIDHasPurchases)) {
-
-                            hasBouth = true;
-                        }else{
-                            hasBouth = false;
-                        }
-                    }
-                });
-            }
-        }
-
-    };
-
 
 }

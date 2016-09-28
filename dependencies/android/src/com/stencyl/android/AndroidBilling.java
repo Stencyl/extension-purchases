@@ -207,17 +207,18 @@ public class AndroidBilling extends Extension
 	 }
     
     public static void purchaseInfo (String moreSkusArr) {
-        productIDInfo = moreSkusArr;
-        
-        Log.i("PurchasesInfo","ProductIDInfo: " + productIDInfo);
-        
-        ArrayList<String> skuList = new ArrayList<String> ();
+    	
+    	productIDInfo = moreSkusArr;
+    	Log.i("PurchasesInfo","ProductIDInfo: " + productIDInfo);
+    	
+    	ArrayList<String> skuList = new ArrayList<String> ();
         skuList.add(moreSkusArr);
         final List<String> moreSkus = new ArrayList(skuList);
+        
+        Log.i("Purchase", "purchaseInfo id's " + moreSkusArr);
 
         final boolean querySkuDetails = true;
         
-        //final List<String> moreSkus = Arrays.asList(moreSkusArr);
         Extension.mainActivity.runOnUiThread(new Runnable() {
             public void run() {
                 try {

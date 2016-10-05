@@ -45,6 +45,7 @@ extern "C" void sendPurchaseFinishEvent(const char* type, const char* data, cons
     NSLog(@"Purchases initialize");
 	[[SKPaymentQueue defaultQueue] addTransactionObserver:self];
 	sendPurchaseEvent("started", "");
+    productsRequest = nil;
     authorizedProducts = [[NSMutableDictionary alloc] init];
     arePurchasesEnabled = NO;
 }
@@ -283,6 +284,8 @@ extern "C" void sendPurchaseFinishEvent(const char* type, const char* data, cons
         }
         sendPurchaseEvent("failed", [transaction.payment.productIdentifier UTF8String]);
 	}
+    
+    [[SKPaymentQueue defaultQueue] finishTransaction:transaction];
 }
 
 - (void)completeTransaction:(SKPaymentTransaction*)transaction

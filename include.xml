@@ -1,10 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <project>
 	
-	<ndll name="purchases" if="ios"/>
-	<dependency name="StoreKit.framework" if="ios" />
+	<section if="ios">
+		<ndll name="purchases" />
+		<dependency name="StoreKit.framework" />
+	</section>
 	
-	<dependency name="purchases" path="dependencies/android" if="android" />
-    <android extension="com.stencyl.android.AndroidBilling" if="android"/>
+	<section if="android">
+		<dependency name="purchases" path="dependencies/android" />
+		<android extension="com.stencyl.android.AndroidBilling" />
+	</section>
 	
 </project>

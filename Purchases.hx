@@ -83,7 +83,16 @@ class Purchases
 			purchaseMap.set(productID, [response,itemType,signature]);
 		}
 		
+		if(hasBought(productID))
+		{
+			items.set(productID, Purchases.items.get(productID) + 1);
+		}else{
+			items.set(productID, 1);
+		}
+		
 		Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_RESTORE, productID));
+		
+		save();
 	}
 
 	public function onProductsVerified(productID:String, title:String, desc:String, price:String)
@@ -162,7 +171,16 @@ class Purchases
 				purchaseMap.set(productID, [Reflect.field(inEvent, "receiptString"),Reflect.field(inEvent, "transactionID")]);
 			}
 			
+			if(hasBought(productID))
+			{
+				items.set(productID, Purchases.items.get(productID) + 1);
+			}else{
+				items.set(productID, 1);
+			}
+			
 			Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_RESTORE, data));
+			
+			save();
 		}
 
 		else if(type == "productsVerified")

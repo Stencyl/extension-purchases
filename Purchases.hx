@@ -1,7 +1,5 @@
 package;
 
-import openfl.Lib;
-
 #if !js
 import openfl.net.SharedObject;
 import openfl.net.SharedObjectFlushStatus;
@@ -16,6 +14,8 @@ import com.stencyl.event.EventMaster;
 import com.stencyl.event.StencylEvent;
 import com.stencyl.behavior.Script;
 import com.stencyl.behavior.TimedTask;
+
+import lime.system.CFFI;
 
 import openfl.events.EventDispatcher;
 import openfl.events.Event;
@@ -506,16 +506,16 @@ class Purchases
 	#end
 
 	#if(cpp && mobile && !android)
-	private static var purchases_initialize = Lib.load("purchases", "purchases_initialize", 0);
-	private static var purchases_restore = Lib.load("purchases", "purchases_restore", 0);
-	private static var purchases_buy = Lib.load("purchases", "purchases_buy", 1);
-	private static var purchases_canbuy = Lib.load("purchases", "purchases_canbuy", 0);
-	private static var purchases_release = Lib.load("purchases", "purchases_release", 0);
-	private static var purchases_requestProductInfo = Lib.load("purchases", "purchases_requestProductInfo", 1);
-	private static var purchases_title = Lib.load("purchases", "purchases_title", 1);
-	private static var purchases_desc = Lib.load("purchases", "purchases_desc", 1);
-	private static var purchases_price = Lib.load("purchases", "purchases_price", 1);
-	private static var set_event_handle = Lib.load("purchases", "purchases_set_event_handle", 1);
-	private static var purchases_validate = Lib.load("purchases", "purchases_validate", 3);
+	private static var purchases_initialize = CFFI.load("purchases", "purchases_initialize", 0);
+	private static var purchases_restore = CFFI.load("purchases", "purchases_restore", 0);
+	private static var purchases_buy = CFFI.load("purchases", "purchases_buy", 1);
+	private static var purchases_canbuy = CFFI.load("purchases", "purchases_canbuy", 0);
+	private static var purchases_release = CFFI.load("purchases", "purchases_release", 0);
+	private static var purchases_requestProductInfo = CFFI.load("purchases", "purchases_requestProductInfo", 1);
+	private static var purchases_title = CFFI.load("purchases", "purchases_title", 1);
+	private static var purchases_desc = CFFI.load("purchases", "purchases_desc", 1);
+	private static var purchases_price = CFFI.load("purchases", "purchases_price", 1);
+	private static var set_event_handle = CFFI.load("purchases", "purchases_set_event_handle", 1);
+	private static var purchases_validate = CFFI.load("purchases", "purchases_validate", 3);
 	#end
 }

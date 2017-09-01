@@ -6,7 +6,7 @@ import openfl.net.SharedObjectFlushStatus;
 #end
 
 #if android
-import openfl.utils.JNI;
+import lime.system.JNI;
 #end
 
 import com.stencyl.Engine;

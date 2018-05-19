@@ -345,7 +345,7 @@ class Purchases
 	public static function consume(productID:String)
 	{		
 		#if (android)
-		if(hasBought(productID))
+		if(purchaseMap.exists(productID))
 		{
 			if (funcConsume == null) {
 				funcConsume = JNI.createStaticMethod ("com/stencyl/android/AndroidBilling", "consume", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V");

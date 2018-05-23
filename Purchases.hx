@@ -44,9 +44,7 @@ class Purchases
 	{
 		trace("Purchases: Successful Purchase");
 		
-		if(!purchaseMap.exists(productID)){
-			purchaseMap.set(productID, [response,itemType,signature]);
-		}
+		purchaseMap.set(productID, [response,itemType,signature]);
 		
 		if(hasBought(productID))
 		{
@@ -79,9 +77,7 @@ class Purchases
 	public function onRestorePurchases(productID:String, response:String, itemType:String, signature:String)
 	{
 		trace("Purchases: Restored Purchase");
-		if(!purchaseMap.exists(productID)){
-			purchaseMap.set(productID, [response,itemType,signature]);
-		}
+		purchaseMap.set(productID, [response,itemType,signature]);
 		
 		if(hasBought(productID))
 		{
@@ -135,9 +131,7 @@ class Purchases
 			
 			var productID = data;
 			
-			if(!purchaseMap.exists(productID)){
-				purchaseMap.set(productID, [Reflect.field(inEvent, "receiptString"),Reflect.field(inEvent, "transactionID")]);
-			}
+			purchaseMap.set(productID, [Reflect.field(inEvent, "receiptString"),Reflect.field(inEvent, "transactionID")]);
 				
 			if(hasBought(productID))
 			{
@@ -167,9 +161,7 @@ class Purchases
 		{
 			var productID = data;
 			
-			if(!purchaseMap.exists(productID)){
-				purchaseMap.set(productID, [Reflect.field(inEvent, "receiptString"),Reflect.field(inEvent, "transactionID")]);
-			}
+			purchaseMap.set(productID, [Reflect.field(inEvent, "receiptString"),Reflect.field(inEvent, "transactionID")]);
 			
 			if(hasBought(productID))
 			{

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<palette>
+    
+    <!-- The other blocks are in Definitions.java -->
+    
+    <block tag="iap-validated"
+           code="Purchases.validateReceipt(~, ~, ~);"
+           type="action"
+           returns="void"
+           category="mobile"
+           helpURL="game-mobile">
+        <fields>
+            <object order="0"></object>
+            <text order="1"></text>
+            <dropdown order="2">
+                <choices>
+                    <c text="@production" code="true"></c>
+                    <c text="@sandbox" code="false"></c>
+                </choices>
+            </dropdown>
+        </fields>
+    </block>
+    
+</palette>

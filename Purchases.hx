@@ -35,7 +35,7 @@ class Purchases
 		trace("Purchases: Started");
 		Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_READY, ""));
 		
-		#if (android)
+		#if android
 		initialized = true;
 		#end
 	}
@@ -108,14 +108,14 @@ class Purchases
 	
 	private static function registerHandle()
 	{
-		#if(cpp && mobile && !android)
+		#if ios
 		set_event_handle(notifyListeners);
 		#end
 	}
 	
 	private static function notifyListeners(inEvent:Dynamic)
 	{
-		#if(cpp && mobile && !android)
+		#if ios
 		var type:String = Std.string(Reflect.field(inEvent, "type"));
 		var data:String = Std.string(Reflect.field(inEvent, "data"));
 		
@@ -203,7 +203,7 @@ class Purchases
 	
 	public static function initialize(publicKey:String = ""):Void 
 	{
-		#if(cpp && mobile && !android)
+		#if ios
 		if(!initialized)
 		{
 			set_event_handle(notifyListeners);
@@ -231,11 +231,11 @@ class Purchases
 	
 	public static function restorePurchases():Void
 	{
-		#if(cpp && mobile && !android)
+		#if ios
 		purchases_restore();
 		#end
 		
-		#if(android)
+		#if android
 		if(funcRestore == null)
 		{
 			funcRestore = JNI.createStaticMethod("com/stencyl/android/AndroidBilling", "restore", "()V", true);
@@ -274,13 +274,13 @@ class Purchases
 		Reflect.setField(so.data, "data", items);
 		#end
 		
-		#if (cpp || neko)
+		#if cpp
 		var flushStatus:SharedObjectFlushStatus = null;
 		#else
 		var flushStatus:String = null;
 		#end
 		
-		#if(!js && !air)
+		#if !js
 		try 
 		{
 		    flushStatus = so.flush();
@@ -308,7 +308,7 @@ class Purchases
 	//True if they've bought this before. If consumable, if they have 1 or more of it.
 	public static function hasBought(productID:String)
 	{			
-		#if (cpp && mobile)
+		#if mobile
 		if(items == null)
 		{
 			return false;
@@ -323,7 +323,7 @@ class Purchases
 	//Uses up a "consumable" (decrements its count by 1).
 	public static function use(productID:String)
 	{
-		#if(cpp && mobile)
+		#if mobile
 		if(hasBought(productID))
 		{
 			items.set(productID, items.get(productID) - 1);
@@ -336,7 +336,7 @@ class Purchases
 	//Allows item to be rebought on Android without consuming local count
 	public static function consume(productID:String)
 	{		
-		#if (android)
+		#if android
 		if(purchaseMap.exists(productID))
 		{
 			if (funcConsume == null) {
@@ -350,7 +350,7 @@ class Purchases
 	
 	public static function getQuantity(productID:String):Int
 	{
-		#if(cpp && mobile)
+		#if mobile
 		if(hasBought(productID))
 		{
 			return items.get(productID);
@@ -362,11 +362,11 @@ class Purchases
 
 	public static function buy(productID:String):Void 
 	{
-		#if(cpp && mobile && !android)
+		#if ios
 		purchases_buy(productID);
 		#end	
 		
-		#if(android)
+		#if android
 		if(funcBuy == null)
 		{
 			funcBuy = JNI.createStaticMethod("com/stencyl/android/AndroidBilling", "buy", "(Ljava/lang/String;)V", true);
@@ -380,11 +380,11 @@ class Purchases
 	{
 		var productIDcommalist:String = productIDlist.join(",");
 		
-		#if(cpp && mobile && !android)		
+		#if ios		
 		purchases_requestProductInfo(productIDcommalist);
 		#end
 		
-		#if(android)
+		#if android
 		if(funcPurchaseInfo == null)
 		{
 			funcPurchaseInfo = JNI.createStaticMethod("com/stencyl/android/AndroidBilling", "purchaseInfo", "(Ljava/lang/String;)V", true);
@@ -396,11 +396,11 @@ class Purchases
 
 	public static function getTitle(productID:String):String 
 	{
-		#if(cpp && mobile && !android)
+		#if ios
 		return purchases_title(productID);
 		#end
 		
-		#if (android)	
+		#if android	
 		if (detailMap.get(productID) != null)
 		{
 			return detailMap.get(productID)[0];
@@ -412,11 +412,11 @@ class Purchases
 	
 	public static function getDescription(productID:String):String 
 	{
-		#if(cpp && mobile && !android)
+		#if ios
 		return purchases_desc(productID);
 		#end
 		
-		#if (android)	
+		#if android	
 		if (detailMap.get(productID) != null)
 		{
 			return detailMap.get(productID)[1];
@@ -428,11 +428,11 @@ class Purchases
 	
 	public static function getPrice(productID:String):String 
 	{
-		#if(cpp && mobile && !android)
+		#if ios
 		return purchases_price(productID);
 		#end
 		
-		#if (android)	
+		#if android	
 		if (detailMap.get(productID) != null)
 		{
 			return detailMap.get(productID)[2];
@@ -444,7 +444,7 @@ class Purchases
 	
 	public static function canBuy():Bool 
 	{
-		#if(cpp && mobile && !android)
+		#if ios
 		return purchases_canbuy();
 		#else
 		return initialized;
@@ -453,11 +453,11 @@ class Purchases
 	
 	public static function release():Void 
 	{
-		#if(cpp && mobile && !android)
+		#if ios
 		purchases_release();
 		#end
 		
-		#if(android)
+		#if android
 		if(funcRelease == null)
 		{
 			funcRelease = JNI.createStaticMethod("com/stencyl/android/AndroidBilling", "release", "()V", true);
@@ -468,7 +468,7 @@ class Purchases
 	}
 	
 	public static function validateReceipt(productID:String,password:String,URL:Bool):Void{
-		#if(cpp && mobile && !android)
+		#if ios
 		var receiptVar = purchaseMap.get(productID)[0];
 		
 		purchases_validate(receiptVar,password,URL);
@@ -497,7 +497,7 @@ class Purchases
 	private static var funcIsPurchased:Dynamic;
 	#end
 
-	#if(cpp && mobile && !android)
+	#if ios
 	private static var purchases_initialize = CFFI.load("purchases", "purchases_initialize", 0);
 	private static var purchases_restore = CFFI.load("purchases", "purchases_restore", 0);
 	private static var purchases_buy = CFFI.load("purchases", "purchases_buy", 1);

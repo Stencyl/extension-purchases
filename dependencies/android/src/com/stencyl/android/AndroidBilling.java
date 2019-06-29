@@ -71,7 +71,12 @@ public class AndroidBilling extends Extension
 	 public boolean onActivityResult(int requestCode, int resultCode, Intent data) {		 
          if (inAppPurchaseHelper != null) {
              
-             return !inAppPurchaseHelper.handleActivityResult (requestCode, resultCode, data);
+             try {
+                return !inAppPurchaseHelper.handleActivityResult (requestCode, resultCode, data);
+              } catch (IllegalStateException e) {
+                Log.i("Purchases","Failed to handle activity result. " + e.getMessage());
+                return true;
+              }
          }
          
          return super.onActivityResult (requestCode, resultCode, data);
@@ -144,6 +149,11 @@ public class AndroidBilling extends Extension
                     mPurchaseFinishedListener.onIabPurchaseFinished(
                                                                     new IabResult(IabHelper.BILLING_RESPONSE_RESULT_ERROR, null),
                                                                     null);
+                } catch (IllegalStateException e) {
+                    Log.e("Purchases", "Failed to launch purchase flow.", e);
+                    mPurchaseFinishedListener.onIabPurchaseFinished(
+                                                                    new IabResult(IabHelper.BILLING_RESPONSE_RESULT_ERROR, null),
+                                                                    null);
                 }
             }
         });
@@ -167,6 +177,8 @@ public class AndroidBilling extends Extension
                          AndroidBilling.inAppPurchaseHelper.consumeAsync(purchase, mConsumeFinishedListener);
                      } catch (IabAsyncInProgressException e) {
                          Log.i("Purchases","Error consuming. Another async operation in progress.");
+                     } catch (IllegalStateException e) {
+                         Log.e("Purchases","Error consuming.", e);
                      }
                  }
                  

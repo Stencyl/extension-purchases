@@ -1,5 +1,5 @@
-iap-validated=iOS Validate Receipt for product with ID %0 with Shared Secret key: %1 in %2 [i:money]
+iap-validated=iOS validate receipt for product with ID %0 with shared secret key: %1 in %2 [i:money]
 iap-validated.help=Optional: Validate Receipt with Itunes before player get items, ID='productID' Shared Secret:'ITunesConnect->Your game->In-App Purchases->View Shared Secret' select Sandbox when testing
 
-production=Production
-sandbox=Sandbox
+production=production
+sandbox=sandbox

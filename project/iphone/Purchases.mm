@@ -1,11 +1,19 @@
 #import <CoreFoundation/CoreFoundation.h>
 #import <UIKit/UIKit.h>
 #import <StoreKit/StoreKit.h> 
+#import <Foundation/Foundation.h>
+#include <Availability.h>
 #include "Purchases.h"
 #include "PurchaseEvent.h"
 
 extern "C" void sendPurchaseEvent(const char* type, const char* data);
 extern "C" void sendPurchaseFinishEvent(const char* type, const char* data, const char* receiptString, const char* transactionID);
+extern "C" void sendPurchaseEventForeign(const char* type, const char* data);
+extern "C" void sendPurchaseFinishEventForeign(const char* type, const char* data, const char* receiptString, const char* transactionID);
+
+#define IOS_13  ([[[UIDevice currentDevice] systemVersion] compare:@"13.0" options:NSNumericSearch] != NSOrderedAscending)
+#define spe(type, data)  if(IOS_13) sendPurchaseEventForeign(type, data); else sendPurchaseEvent(type, data);
+#define spfe(type, data, receipt, transaction) if(IOS_13) sendPurchaseFinishEventForeign(type, data, receipt, transaction); else sendPurchaseFinishEvent(type, data, receipt, transaction);
 
 @interface InAppPurchase: NSObject <SKProductsRequestDelegate, SKPaymentTransactionObserver>
 {
@@ -44,7 +52,7 @@ extern "C" void sendPurchaseFinishEvent(const char* type, const char* data, cons
 {
     NSLog(@"Purchases initialize");
 	[[SKPaymentQueue defaultQueue] addTransactionObserver:self];
-	sendPurchaseEvent("started", "");
+    spe("started", "");
     productsRequest = nil;
     authorizedProducts = [[NSMutableDictionary alloc] init];
     arePurchasesEnabled = NO;
@@ -65,7 +73,7 @@ extern "C" void sendPurchaseFinishEvent(const char* type, const char* data, cons
 {
     if(!arePurchasesEnabled || ![SKPaymentQueue canMakePayments])
     {
-        sendPurchaseEvent("failed", [productId UTF8String]);
+        spe("failed", [productId UTF8String]);
         return;
     }
     
@@ -77,7 +85,7 @@ extern "C" void sendPurchaseFinishEvent(const char* type, const char* data, cons
         return;
     }
     
-    sendPurchaseEvent("failed", [productId UTF8String]);
+    spe("failed", [productId UTF8String]);
 }
 
 // Multiple requests can be made, they'll be added into authorized list if not already there.
@@ -252,7 +260,7 @@ extern "C" void sendPurchaseFinishEvent(const char* type, const char* data, cons
     [productsRequest release];
     productsRequest = nil;
     arePurchasesEnabled = YES;
-    sendPurchaseEvent("productsVerified", "");
+    spe("productsVerified", "");
 }
 
 #pragma mark - SKPaymentTransactionObserver and Purchase helper methods
@@ -272,7 +280,7 @@ extern "C" void sendPurchaseFinishEvent(const char* type, const char* data, cons
             return;
         }
         
-        sendPurchaseFinishEvent("success", [transaction.payment.productIdentifier UTF8String],[jsonObjectString UTF8String],[transaction.transactionIdentifier UTF8String]);
+        spfe("success", [transaction.payment.productIdentifier UTF8String],[jsonObjectString UTF8String],[transaction.transactionIdentifier UTF8String]);
 	}
 
 	else
@@ -282,7 +290,7 @@ extern "C" void sendPurchaseFinishEvent(const char* type, const char* data, cons
         {
             NSLog(@"Transaction error: %@", transaction.error.localizedDescription);
         }
-        sendPurchaseEvent("failed", [transaction.payment.productIdentifier UTF8String]);
+        spe("failed", [transaction.payment.productIdentifier UTF8String]);
 	}
     
     [[SKPaymentQueue defaultQueue] finishTransaction:transaction];
@@ -306,7 +314,7 @@ extern "C" void sendPurchaseFinishEvent(const char* type, const char* data, cons
         return;
     }
     
-    sendPurchaseFinishEvent("restore", [transaction.payment.productIdentifier UTF8String],[jsonObjectString UTF8String],[transaction.transactionIdentifier UTF8String]);
+    spfe("restore", [transaction.payment.productIdentifier UTF8String],[jsonObjectString UTF8String],[transaction.transactionIdentifier UTF8String]);
     
     //sendPurchaseEvent("restore", [transaction.originalTransaction.payment.productIdentifier UTF8String]);
     //[self finishTransaction:transaction wasSuccessful:YES];
@@ -340,7 +348,7 @@ extern "C" void sendPurchaseFinishEvent(const char* type, const char* data, cons
 
 	else
 	{
-		sendPurchaseEvent("cancel", [transaction.payment.productIdentifier UTF8String]);
+		spe("cancel", [transaction.payment.productIdentifier UTF8String]);
 		[[SKPaymentQueue defaultQueue] finishTransaction:transaction];
 	}
 }

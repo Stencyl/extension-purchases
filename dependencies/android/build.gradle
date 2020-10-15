@@ -9,7 +9,7 @@ buildscript {
 	}
 }
 
-apply plugin: 'android-library'
+apply plugin: 'com.android.library'
 
 android {
 	compileSdkVersion Integer.parseInt(project.ANDROID_BUILD_SDK_VERSION)
@@ -25,6 +25,6 @@ android {
 }
 
 dependencies {
-	compile fileTree(dir: 'libs', include: ['*.jar'])
-	compile project(':deps:extension-api')
+	api fileTree(dir: 'libs', include: ['*.jar'])
+	api project(':deps:extension-api')
 }

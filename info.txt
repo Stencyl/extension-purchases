@@ -1,0 +1,6 @@
+name=Purchases
+description=Enable in-game purchases for mobile games
+author=Jon
+website=http://www.stencyl.com
+version=1.0.0
+compatibility=mobile

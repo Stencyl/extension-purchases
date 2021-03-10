@@ -1,3 +1,4 @@
+id=com.stencyl.purchases
 name=Purchases
 description=Enable in-game purchases for mobile games
 author=Jon

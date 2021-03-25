@@ -10,6 +10,7 @@
 	<section if="android">
 		<dependency name="purchases" path="dependencies/android" />
 		<android extension="com.stencyl.android.AndroidBilling" />
+		<android permission="com.android.vending.BILLING" if="${androidPurchases}" />
 	</section>
 	
 </project>

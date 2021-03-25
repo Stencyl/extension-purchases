@@ -1,59 +1,37 @@
 <xml>
-	
-	<set name="GCC_THIN_ARCHIVE" value="1" if="iphone"/>
-	
-	<include name="${HXCPP}/build-tool/BuildCommon.xml"/>
-	
-	<set name="mobile" value="1" if="iphone"/>
-	<set name="mobile" value="1" if="android"/>
-	<set name="mobile" value="1" if="webos"/>
-	<set name="mobile" value="1" if="blackberry"/>
-	
-	<set name="SLIBEXT" value=".lib" if="windows"/>
-	<set name="SLIBEXT" value=".a" unless="windows"/>
-	<set name="SLIBEXT" value=".so" if="webos"/>
-    
-    <files id="iphone">
-        <depend name="${HXCPP}/include/hx/Macros.h"/>
-        <depend name="${HXCPP}/include/hx/CFFI.h"/>
-        <compilerflag value="-IiPhone/include"/>
-        <compilerflag value="-Iinclude"/>
-		<file name="iphone/Purchases.mm"/>
-    </files>
-    
-	<files id="common">
-		<compilerflag value="-Iinclude"/>
-		<file name="common/ExternalInterface.cpp"/>
-	</files>
-	
-	<set name="tool" value="exe" unless="iphone"/>
-	<set name="tool" value="static_link" if="iphone"/>
-	
-	<set name="IOS_ARCH" value="-v7" if="HXCPP_ARMV7"/>
-	<set name="IOS_ARCH" value="-64" if="HXCPP_ARM64 || HXCPP_M64"/>
-	
-	<set name="ndll-tool" value="dll" unless="iphone"/>
-	<set name="ndll-tool" value="static_link" if="iphone"/>
-	<set name="name_extra" value=".iphoneos${IOS_ARCH}" if="iphoneos"/>
-	<set name="name_extra" value=".iphonesim${IOS_ARCH}" if="iphonesim"/>
 
-	<set name="no_thirdparty_extras" value="1" if="iphone"/>
-	
-	<set name="sdl_static" value="1" unless="mobile"/>
-	<unset name="sdl_static" if="dynamic_sdl"/>
-	<set name="no_thirdparty_extras" value="1" if="dynamic_sdl"/>
-	
-	<set name="name_prefix" value="lib" if="iphone" />
-	
-	<target id="NDLL" output="${name_prefix}purchases${name_extra}" tool="linker" toolid="${ndll-tool}">
-		<outdir name="../ndll/${BINDIR}" />
-		<ext value=".ndll" unless="mobile"/>
-		<files id="iphone" if="iphone"/>
-		<files id="common"/>
-	</target>
+<pragma once="true" />
 
-	<target id="default">
-	   <target id="NDLL"/>
-	</target>
-	
+<set name="id" value="com.stencyl.purchases" />
+
+<error value="The ${id} extension only provides native code for iOS" unless="ios" />
+
+<files id="${id}-dependencies">
+  <depend files="hxcpp-depends" />
+  <depend name="${this_dir}/Build.xml" dateOnly="true" />
+  <depend name="${this_dir}/include/PurchaseEvent.h" />
+  <depend name="${this_dir}/include/Purchases.h" />
+</files>
+
+<files id="${id}-common" dir="${this_dir}">
+  <depend files="${id}-dependencies" />
+  <cache value="1" project="${id}" asLibrary="true" />
+  <compilerflag value="-I${this_dir}/include" />
+  <file name="common/ExternalInterface.cpp" />
+</files>
+
+<files id="${id}-ios" dir="${this_dir}">
+  <depend files="${id}-dependencies" />
+  <cache value="1" project="${id}" asLibrary="true" />
+  <compilerflag value="-I${this_dir}/include" />
+  <file name="iphone/Purchases.mm" />
+</files>
+
+<target id="haxe">
+  <files id="com.stencyl.purchases-common" />
+  <files id="com.stencyl.purchases-ios" if="ios" />
+</target>
+
+<unset name="id" />
+
 </xml>

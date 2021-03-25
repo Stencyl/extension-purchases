@@ -22,6 +22,9 @@ import openfl.events.Event;
 
 import haxe.Json;
 
+#if ios
+@:buildXml('<include name="${haxelib:com.stencyl.purchases}/project/Build.xml"/>')
+#end
 class Purchases
 {	
 

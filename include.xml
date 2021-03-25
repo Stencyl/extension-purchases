@@ -2,7 +2,6 @@
 <project>
 	
 	<section if="ios">
-		<ndll name="purchases" />
 		<dependency name="StoreKit.framework" />
 	</section>
 	

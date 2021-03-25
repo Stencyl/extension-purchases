@@ -1,4 +1,4 @@
-package;
+package com.stencyl.purchases;
 
 import openfl.events.Event;
 

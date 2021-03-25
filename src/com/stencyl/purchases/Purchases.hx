@@ -1,4 +1,4 @@
-package;
+package com.stencyl.purchases;
 
 #if !js
 import openfl.net.SharedObject;

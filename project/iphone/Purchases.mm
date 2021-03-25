@@ -91,17 +91,11 @@ extern "C" void sendPurchaseFinishEventForeign(const char* type, const char* dat
 // Multiple requests can be made, they'll be added into authorized list if not already there.
 - (void)requestProductInfo:(NSMutableSet*)productIdentifiers
 {
-    if(productsRequest != nil)
-    { // A previous request is still pending, probably because of lost connection to App Store
-        [productsRequest release];
-    }
-    
     arePurchasesEnabled = NO;
     
     productsRequest = [[SKProductsRequest alloc] initWithProductIdentifiers:productIdentifiers];
     productsRequest.delegate = self;
     [productsRequest start];
-    
 }
     
 - (const char*)getProductTitle:(NSString*)productId
@@ -142,7 +136,6 @@ extern "C" void sendPurchaseFinishEventForeign(const char* type, const char* dat
             [numberFormatter setNumberStyle:NSNumberFormatterCurrencyStyle];
             [numberFormatter setLocale:skProduct.priceLocale];
             NSString *formattedString = [numberFormatter stringFromNumber:skProduct.price];
-            [numberFormatter release];
             
             // Replace Euro UTF-16 with pseudo Unicode if it's in there.
             NSString *euroSymbol = [NSString stringWithFormat:@"%C", 0x20AC]; // UTF-16
@@ -244,7 +237,6 @@ extern "C" void sendPurchaseFinishEventForeign(const char* type, const char* dat
 
 - (void)request:(SKProductsRequest *)request didFailWithError:(NSError *)error
 {
-    [productsRequest release];
     productsRequest = nil;
     arePurchasesEnabled = NO;
 }
@@ -257,7 +249,6 @@ extern "C" void sendPurchaseFinishEventForeign(const char* type, const char* dat
         [authorizedProducts setObject:skProduct forKey:[skProduct productIdentifier]];
     }
     
-    [productsRequest release];
     productsRequest = nil;
     arePurchasesEnabled = YES;
     spe("productsVerified", "");
@@ -383,12 +374,10 @@ extern "C" void sendPurchaseFinishEventForeign(const char* type, const char* dat
 - (void)dealloc
 {
     if(authorizedProducts)
-        [authorizedProducts release];
+        authorizedProducts = nil;
     
     if(productsRequest)
-        [productsRequest release];
-    
-    [super dealloc];
+        productsRequest = nil;
 }
 
 @end
@@ -421,7 +410,7 @@ extern "C"
 
 	void releaseInAppPurchase()
 	{
-		[inAppPurchase release];
+		inAppPurchase = nil;
 	}
 
     void requestProductInfo(const char *inProductIDcommalist)

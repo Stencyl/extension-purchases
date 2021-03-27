@@ -1,10 +1,103 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <palette>
     
-    <!-- The other blocks are in Definitions.java -->
-    
+    <block tag="iap-buy-use"
+           code="com.stencyl.purchases.Purchases.~(~);"
+           type="action"
+           returns="void"
+           category="mobile"
+           helpURL="game-mobile">
+        <fields>
+            <dropdown order="0">
+                <choices>
+                    <c text="@buy" code="buy" />
+                    <c text="@use" code="use" />
+                </choices>
+            </dropdown>
+            <text order="1" />
+        </fields>
+    </block>
+
+    <block tag="iap-free-unmanaged"
+           code="com.stencyl.purchases.Purchases.consume(~);"
+           type="action"
+           returns="void"
+           category="mobile"
+           helpURL="game-mobile">
+        <fields>
+            <text order="0" />
+        </fields>
+    </block>
+
+    <block tag="iap-get-quantity"
+           code="com.stencyl.purchases.Purchases.getQuantity(~)"
+           type="normal"
+           returns="int"
+           category="mobile"
+           helpURL="game-mobile">
+        <fields>
+            <text order="0" />
+        </fields>
+    </block>
+
+    <block tag="iap-loaded"
+           code="com.stencyl.purchases.Purchases.canBuy()"
+           type="normal"
+           returns="boolean"
+           category="mobile"
+           helpURL="game-mobile">
+    </block>
+
+    <block tag="iap-purchased"
+           code="com.stencyl.purchases.Purchases.hasBought(~)"
+           type="normal"
+           returns="boolean"
+           category="mobile"
+           helpURL="game-mobile">
+        <fields>
+            <text order="0" />
+        </fields>
+    </block>
+
+    <block tag="iap-request-info"
+           code="com.stencyl.purchases.Purchases.requestProductInfo([~]);"
+           type="action"
+           returns="void"
+           category="mobile"
+           helpURL="game-mobile">
+        <fields>
+            <text order="0" />
+        </fields>
+    </block>
+
+    <block tag="iap-restore"
+           code="com.stencyl.purchases.Purchases.restorePurchases();"
+           type="action"
+           returns="void"
+           category="mobile"
+           helpURL="game-mobile">
+    </block>
+
+    <block tag="iap-title-desc-price"
+           code="com.stencyl.purchases.Purchases.get~(~)"
+           type="normal"
+           returns="text"
+           category="mobile"
+           helpURL="game-mobile">
+        <fields>
+            <dropdown order="0">
+                <choices>
+                    <c text="@title" code="Title" />
+                    <c text="@desc" code="Description" />
+                    <c text="@price" code="Price" />
+                </choices>
+            </dropdown>
+            <text order="1" />
+        </fields>
+    </block>
+
     <block tag="iap-validated"
-           code="Purchases.validateReceipt(~, ~, ~);"
+           code="com.stencyl.purchases.Purchases.validateReceipt(~, ~, ~);"
            type="action"
            returns="void"
            category="mobile"

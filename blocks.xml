@@ -1,6 +1,47 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <palette>
     
+    <block tag="mobile-purchase-id"
+           code="productID"
+           type="normal"
+           returns="text"
+           category="mobile"
+           hidden="true"
+           helpURL="event-mobile">
+        <context>
+            <requiredContext type="has" value="productID:String" />
+        </context>
+    </block>
+
+    <block tag="event-mobile-purchases"
+           type="event"
+           returns="void"
+           category="events"
+           helpURL="event-mobile">
+        <code>
+            <event-def params="productID:String" innercode="#1" listener="addPurchaseListener(#0, ${eventRef});" />
+        </code>
+        <fields>
+            <dropdown order="0">
+                <choices>
+                    <c text="@event.mobile.purchases.ready" code="200" />
+                    <c text="@event.mobile.purchases.success" code="201" />
+                    <c text="@event.mobile.purchases.fail" code="202" />
+                    <c text="@event.mobile.purchases.restore" code="203" />
+                    <c text="@event.mobile.purchases.cancel" code="204" />
+                    <c text="@event.mobile.purchases.request" code="205" />
+                    <c text="@event.mobile.purchases.validate" code="206" />
+                </choices>
+            </dropdown>
+            <code-block order="1" />
+            <attached-block order="2" tag="mobile-purchase-id" />
+        </fields>
+        <context>
+            <innerContext type="class" value="com.stencyl.behavior.Script" />
+            <innerContext type="has" value="productID:String" />
+        </context>
+    </block>
+
     <block tag="iap-buy-use"
            code="com.stencyl.purchases.Purchases.~(~);"
            type="action"

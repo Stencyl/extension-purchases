@@ -4,7 +4,7 @@
     <!-- The other blocks are in Definitions.java -->
     
     <block tag="iap-validated"
-           code="Purchases.validateReceipt(~, ~, ~);"
+           code="com.stencyl.purchases.Purchases.validateReceipt(~, ~, ~);"
            type="action"
            returns="void"
            category="mobile"

@@ -24,6 +24,8 @@ import haxe.Json;
 
 #if ios
 @:buildXml('<include name="${haxelib:com.stencyl.purchases}/project/Build.xml"/>')
+//This is just here to prevent the otherwise indirectly referenced native code from bring stripped at link time.
+@:cppFileCode('extern "C" int purchases_register_prims();void com_stencyl_purchases_link(){purchases_register_prims();}')
 #end
 class Purchases
 {	

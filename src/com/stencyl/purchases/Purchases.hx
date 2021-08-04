@@ -45,11 +45,11 @@ class Purchases
 		#end
 	}
 
-	public function onPurchase(productID:String, response:String, itemType:String, signature:String)
+	public function onPurchase(productID:String, purchaseToken:String)
 	{
 		trace("Purchases: Successful Purchase");
 		
-		purchaseMap.set(productID, [response,itemType,signature]);
+		purchaseMap.set(productID, [purchaseToken]);
 		
 		if(hasBought(productID))
 		{
@@ -79,10 +79,10 @@ class Purchases
 		Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_CANCEL, productID));
 	}
 	
-	public function onRestorePurchases(productID:String, response:String, itemType:String, signature:String)
+	public function onRestorePurchases(productID:String, purchaseToken:String)
 	{
 		trace("Purchases: Restored Purchase");
-		purchaseMap.set(productID, [response,itemType,signature]);
+		purchaseMap.set(productID, [purchaseToken]);
 		
 		if(hasBought(productID))
 		{
@@ -345,10 +345,10 @@ class Purchases
 		if(purchaseMap.exists(productID))
 		{
 			if (funcConsume == null) {
-				funcConsume = JNI.createStaticMethod ("com/stencyl/android/AndroidBilling", "consume", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V");
+				funcConsume = JNI.createStaticMethod ("com/stencyl/android/AndroidBilling", "consume", "(Ljava/lang/String;)V");
 			}
 			
-			funcConsume (purchaseMap.get(productID)[0], purchaseMap.get(productID)[1], purchaseMap.get(productID)[2]);
+			funcConsume (purchaseMap.get(productID)[0]);
 		}
 		#end
 	}

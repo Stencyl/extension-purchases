@@ -23,17 +23,34 @@ import openfl.events.Event;
 import haxe.Json;
 
 #if ios
+typedef PurchaseDetails = {
+	var receiptString:String;
+	var transactionID:String;
+}
+#elseif android
+typedef PurchaseDetails = {
+	var purchaseToken:String;
+}
+typedef ProductDetails = {
+	var title:String;
+	var description:String;
+	var price:String;
+}
+#end
+
+#if ios
 @:buildXml('<include name="${haxelib:com.stencyl.purchases}/project/Build.xml"/>')
 //This is just here to prevent the otherwise indirectly referenced native code from bring stripped at link time.
 @:cppFileCode('extern "C" int purchases_register_prims();void com_stencyl_purchases_link(){purchases_register_prims();}')
 #end
 class Purchases
 {	
-
+	#if android
 	//Used for Android callbacks from Java
 	public function new()
 	{
 	}
+	#end
 	
 	public function onStarted()
 	{
@@ -45,15 +62,17 @@ class Purchases
 		#end
 	}
 
+	#if android
 	public function onPurchase(productID:String, purchaseToken:String)
 	{
 		trace("Purchases: Successful Purchase");
 		
-		purchaseMap.set(productID, [purchaseToken]);
+		var purchase = {"purchaseToken": purchaseToken};
+		purchaseMap.set(productID, purchase);
 		
 		if(hasBought(productID))
 		{
-			items.set(productID, Purchases.items.get(productID) + 1);
+			items.set(productID, items.get(productID) + 1);
 		}
 			
 		else
@@ -64,7 +83,6 @@ class Purchases
 		save();
 		
 		Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_SUCCESS, productID));
-		
 	}
 	
 	public function onFailedPurchase(productID:String)
@@ -82,12 +100,16 @@ class Purchases
 	public function onRestorePurchases(productID:String, purchaseToken:String)
 	{
 		trace("Purchases: Restored Purchase");
-		purchaseMap.set(productID, [purchaseToken]);
+
+		var purchase = {"purchaseToken": purchaseToken};
+		purchaseMap.set(productID, purchase);
 		
 		if(hasBought(productID))
 		{
-			items.set(productID, Purchases.items.get(productID) + 1);
-		}else{
+			items.set(productID, items.get(productID) + 1);
+		}
+		else
+		{
 			items.set(productID, 1);
 		}
 		
@@ -100,27 +122,30 @@ class Purchases
 	{
 		trace("Purchases: Products Verified");
 		
-		detailMap.set(productID, [title,desc,price]);
+		detailMap.set(productID, {"title": title, "description": desc, "price": price});
 		Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_PRODUCTS_VERIFIED, productID));
 	}
+	#end
 
 	//---------------------------------------------
 
+
+
 	private static var initialized:Bool = false;
 	private static var items:Map<String,Int> = new Map<String,Int>();
-	private static var detailMap:Map<String, Array<String>> = new Map < String, Array<String> > ();
-	private static var purchaseMap:Map<String, Array<String>> = new Map < String, Array<String> > ();
+	#if android
+	private static var detailMap:Map<String, ProductDetails> = new Map < String, ProductDetails > ();
+	#end
+	private static var purchaseMap:Map<String, PurchaseDetails> = new Map < String, PurchaseDetails > ();
 	
+	#if ios
 	private static function registerHandle()
 	{
-		#if ios
 		set_event_handle(notifyListeners);
-		#end
 	}
 	
 	private static function notifyListeners(inEvent:Dynamic)
 	{
-		#if ios
 		var type:String = Std.string(Reflect.field(inEvent, "type"));
 		var data:String = Std.string(Reflect.field(inEvent, "data"));
 		
@@ -136,12 +161,17 @@ class Purchases
 			
 			var productID = data;
 			
-			purchaseMap.set(productID, [Reflect.field(inEvent, "receiptString"),Reflect.field(inEvent, "transactionID")]);
-				
+			purchaseMap.set(productID, {
+				"receiptString": Reflect.field(inEvent, "receiptString"),
+				"transactionID": Reflect.field(inEvent, "transactionID")
+			});
+			
 			if(hasBought(productID))
 			{
-				items.set(productID, Purchases.items.get(productID) + 1);
-			}else{
+				items.set(productID, items.get(productID) + 1);
+			}
+			else
+			{
 				items.set(productID, 1);
 			}
 			
@@ -166,12 +196,17 @@ class Purchases
 		{
 			var productID = data;
 			
-			purchaseMap.set(productID, [Reflect.field(inEvent, "receiptString"),Reflect.field(inEvent, "transactionID")]);
+			purchaseMap.set(productID, {
+				"receiptString": Reflect.field(inEvent, "receiptString"),
+				"transactionID": Reflect.field(inEvent, "transactionID")
+			});
 			
 			if(hasBought(productID))
 			{
-				items.set(productID, Purchases.items.get(productID) + 1);
-			}else{
+				items.set(productID, items.get(productID) + 1);
+			}
+			else
+			{
 				items.set(productID, 1);
 			}
 			
@@ -193,7 +228,7 @@ class Purchases
 			
 			if(hasBought(productID))
 			{
-				items.set(productID, Purchases.items.get(productID) + 1);
+				items.set(productID, items.get(productID) + 1);
 			}
 			
 			else
@@ -203,8 +238,8 @@ class Purchases
 		
 			save();
 		}
-		#end
 	}
+	#end
 	
 	public static function initialize(publicKey:String = ""):Void 
 	{
@@ -252,7 +287,7 @@ class Purchases
 	
 	private static function load()
 	{
-		#if cpp
+		#if mobile
 		try 
 		{
 			var data = SharedObject.getLocal("in-app-purchases");
@@ -274,18 +309,12 @@ class Purchases
 	
 	private static function save()
 	{
-		#if cpp
+		#if mobile
 		var so = SharedObject.getLocal("in-app-purchases");
 		Reflect.setField(so.data, "data", items);
-		#end
 		
-		#if cpp
 		var flushStatus:SharedObjectFlushStatus = null;
-		#else
-		var flushStatus:String = null;
-		#end
 		
-		#if !js
 		try 
 		{
 		    flushStatus = so.flush();
@@ -307,7 +336,7 @@ class Purchases
 		            trace("Saved Purchases");
 		    }
 		}
-		#end	
+		#end
 	}
 	
 	//True if they've bought this before. If consumable, if they have 1 or more of it.
@@ -335,12 +364,11 @@ class Purchases
 			save();
 		}
 		#end
-			
 	}
 	
 	//Allows item to be rebought on Android without consuming local count
 	public static function consume(productID:String)
-	{		
+	{
 		#if android
 		if(purchaseMap.exists(productID))
 		{
@@ -348,7 +376,7 @@ class Purchases
 				funcConsume = JNI.createStaticMethod ("com/stencyl/android/AndroidBilling", "consume", "(Ljava/lang/String;)V");
 			}
 			
-			funcConsume (purchaseMap.get(productID)[0]);
+			funcConsume (purchaseMap.get(productID).purchaseToken);
 		}
 		#end
 	}
@@ -408,7 +436,7 @@ class Purchases
 		#if android	
 		if (detailMap.get(productID) != null)
 		{
-			return detailMap.get(productID)[0];
+			return detailMap.get(productID).title;
 		}
 		#end
 		
@@ -424,7 +452,7 @@ class Purchases
 		#if android	
 		if (detailMap.get(productID) != null)
 		{
-			return detailMap.get(productID)[1];
+			return detailMap.get(productID).description;
 		}
 		#end
 		
@@ -440,7 +468,7 @@ class Purchases
 		#if android	
 		if (detailMap.get(productID) != null)
 		{
-			return detailMap.get(productID)[2];
+			return detailMap.get(productID).price;
 		}
 		#end
 		
@@ -474,17 +502,17 @@ class Purchases
 	
 	public static function validateReceipt(productID:String,password:String,URL:Bool):Void{
 		#if ios
-		var receiptVar = purchaseMap.get(productID)[0];
+		var receiptVar = purchaseMap.get(productID).receiptString;
 		
 		purchases_validate(receiptVar,password,URL);
 		
 		Script.runLater(1000 * 2, function(timeTask:TimedTask):Void
 		{
-			if(purchases_validate(receiptVar,password,URL)){
-		
-			Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_PRODUCT_VALIDATED, productID));
+			if(purchases_validate(receiptVar,password,URL))
+			{
+				Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_PRODUCT_VALIDATED, productID));
 			}
-			
+
 		}, null);
 		#end
 	}

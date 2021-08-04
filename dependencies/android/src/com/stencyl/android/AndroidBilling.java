@@ -84,7 +84,10 @@ public class AndroidBilling extends Extension implements
 
     public void initialize() {
         if(billingClient == null || billingClient.getConnectionState() == BillingClient.ConnectionState.CLOSED) {
-            billingClient = BillingClient.newBuilder(mainActivity).setListener(this).build();
+            billingClient = BillingClient.newBuilder(mainActivity)
+                    .setListener(this)
+                    .enablePendingPurchases()
+                    .build();
             billingClient.startConnection(this);
         }
     }
@@ -164,7 +167,7 @@ public class AndroidBilling extends Extension implements
             for(Purchase purchase : list) {
                 if(Security.verifyPurchase(publicKey, purchase.getOriginalJson(), purchase.getSignature())) {
                     for(String sku : purchase.getSkus()) {
-                        haxeCallback("onPurchase", new Object[] {sku,purchase.getPurchaseToken()});
+                        haxeCallback("onPurchase", new Object[] {sku,purchase.getPurchaseToken(),purchase.getPurchaseState()});
                     }
                 } else {
                     failedPurchase();
@@ -210,7 +213,7 @@ public class AndroidBilling extends Extension implements
             for(Purchase restoredPurchase : list) {
                 if(Security.verifyPurchase(publicKey, restoredPurchase.getOriginalJson(), restoredPurchase.getSignature())) {
                     for (String sku: restoredPurchase.getSkus()) {
-                        haxeCallback("onRestorePurchases", new Object[] {sku, restoredPurchase.getPurchaseToken()});
+                        haxeCallback("onRestorePurchases", new Object[] {sku, restoredPurchase.getPurchaseToken(), restoredPurchase.getPurchaseState()});
                     }
                 }
             }

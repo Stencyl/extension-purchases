@@ -30,6 +30,7 @@ typedef PurchaseDetails = {
 #elseif android
 typedef PurchaseDetails = {
 	var purchaseToken:String;
+	var purchaseState:Int;
 }
 typedef ProductDetails = {
 	var title:String;
@@ -63,26 +64,32 @@ class Purchases
 	}
 
 	#if android
-	public function onPurchase(productID:String, purchaseToken:String)
+	private static var PURCHASED:Int = 1;
+    private static var PENDING:Int = 2;
+
+	public function onPurchase(productID:String, purchaseToken:String, purchaseState:Int)
 	{
 		trace("Purchases: Successful Purchase");
 		
-		var purchase = {"purchaseToken": purchaseToken};
+		var purchase = {"purchaseToken": purchaseToken, "purchaseState": purchaseState};
 		purchaseMap.set(productID, purchase);
 		
-		if(hasBought(productID))
+		if(purchaseState == PURCHASED)
 		{
-			items.set(productID, items.get(productID) + 1);
-		}
+			if(hasBought(productID))
+			{
+				items.set(productID, items.get(productID) + 1);
+			}
+				
+			else
+			{
+				items.set(productID, 1);
+			}
 			
-		else
-		{
-			items.set(productID, 1);
+			save();
+			
+			Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_SUCCESS, productID));
 		}
-		
-		save();
-		
-		Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_SUCCESS, productID));
 	}
 	
 	public function onFailedPurchase(productID:String)
@@ -97,25 +104,28 @@ class Purchases
 		Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_CANCEL, productID));
 	}
 	
-	public function onRestorePurchases(productID:String, purchaseToken:String)
+	public function onRestorePurchases(productID:String, purchaseToken:String, purchaseState:Int)
 	{
 		trace("Purchases: Restored Purchase");
 
-		var purchase = {"purchaseToken": purchaseToken};
+		var purchase = {"purchaseToken": purchaseToken, "purchaseState": purchaseState};
 		purchaseMap.set(productID, purchase);
 		
-		if(hasBought(productID))
+		if(purchaseState == PURCHASED)
 		{
-			items.set(productID, items.get(productID) + 1);
+			if(hasBought(productID))
+			{
+				items.set(productID, items.get(productID) + 1);
+			}
+			else
+			{
+				items.set(productID, 1);
+			}
+			
+			Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_RESTORE, productID));
+			
+			save();
 		}
-		else
-		{
-			items.set(productID, 1);
-		}
-		
-		Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_RESTORE, productID));
-		
-		save();
 	}
 
 	public function onProductsVerified(productID:String, title:String, desc:String, price:String)
@@ -353,6 +363,20 @@ class Purchases
 		return false;
 		#end
 	}
+
+	public static function isPending(productID:String)
+	{
+		#if android
+		if(purchaseMap == null)
+		{
+			return false;
+		}
+		
+		return purchaseMap.exists(productID) && purchaseMap.get(productID).purchaseState == PENDING;
+		#else
+		return false;
+		#end
+	}
 	
 	//Uses up a "consumable" (decrements its count by 1).
 	public static function use(productID:String)
@@ -370,7 +394,7 @@ class Purchases
 	public static function consume(productID:String)
 	{
 		#if android
-		if(purchaseMap.exists(productID))
+		if(purchaseMap.exists(productID) && purchaseMap.get(productID).purchaseState == PURCHASED)
 		{
 			if (funcConsume == null) {
 				funcConsume = JNI.createStaticMethod ("com/stencyl/android/AndroidBilling", "consume", "(Ljava/lang/String;)V");
@@ -512,7 +536,7 @@ class Purchases
 			{
 				Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_PRODUCT_VALIDATED, productID));
 			}
-
+			
 		}, null);
 		#end
 	}

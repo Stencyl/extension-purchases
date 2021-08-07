@@ -508,13 +508,9 @@ class Purchases
 	private static var funcInit:Dynamic;
 	private static var funcBuy:Dynamic;
 	private static var funcConsume:Dynamic;
-	private static var funcSub:Dynamic;
 	private static var funcRestore:Dynamic;
 	private static var funcRelease:Dynamic;
-	private static var funcTest:Dynamic;
 	private static var funcPurchaseInfo:Dynamic;
-	private static var funcSubInfo:Dynamic;
-	private static var funcIsPurchased:Dynamic;
 	#end
 
 	#if ios

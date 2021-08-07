@@ -1,5 +1,13 @@
 iap-validated=iOS validate receipt for product with ID %0 with shared secret key: %1 in %2 [i:money]
 iap-validated.help=Optional: Validate Receipt with Itunes before player get items, ID='productID' Shared Secret:'ITunesConnect->Your game->In-App Purchases->View Shared Secret' select Sandbox when testing
 
+iap-is-pending=product with ID %0 is pending [i:money]
+iap-is-pending.help=If a transaction was started, but hasn't completed yet, a product is pending (for example, a product may be paid for later in cash).
+
+iap-set-product-type=mark product with ID %0 as %1 [i:money]
+iap-set-product-type.help=All purchases must be set to either consumable or non-consumable before purchasing
+
 production=production
 sandbox=sandbox
+consumable=consumable
+nonconsumable=non-consumable

@@ -31,6 +31,7 @@ typedef PurchaseDetails = {
 typedef PurchaseDetails = {
 	var purchaseToken:String;
 	var purchaseState:Int;
+	var isAcknowledged:Bool;
 }
 typedef ProductDetails = {
 	var title:String;
@@ -63,23 +64,27 @@ class Purchases
 		#end
 	}
 
+	public static var TYPE_IAP_CONSUMABLE = 1;
+    public static var TYPE_IAP_NONCONSUMABLE = 2;
+
 	#if android
 	private static var PURCHASED:Int = 1;
     private static var PENDING:Int = 2;
 
-	public function onPurchase(productID:String, purchaseToken:String, purchaseState:Int)
+    public function onPurchase(productID:String, purchaseToken:String, purchaseState:Int, isAcknowledged:Bool)
 	{
 		trace("Purchases: Successful Purchase");
 		
-		var purchase = {"purchaseToken": purchaseToken, "purchaseState": purchaseState};
+		var purchase = {"purchaseToken": purchaseToken, "purchaseState": purchaseState, "isAcknowledged": isAcknowledged};
 		purchaseMap.set(productID, purchase);
 		
-		if(purchaseState == PURCHASED)
+		if(purchaseState == PURCHASED && !isAcknowledged)
 		{
 			changeCount(productID, 1);
 			
 			save();
-			
+			acknowledgePurchase(productID);
+
 			Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_SUCCESS, productID));
 		}
 	}
@@ -96,11 +101,11 @@ class Purchases
 		Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_CANCEL, productID));
 	}
 	
-	public function onRestorePurchases(productID:String, purchaseToken:String, purchaseState:Int)
+	public function onRestorePurchases(productID:String, purchaseToken:String, purchaseState:Int, isAcknowledged:Bool)
 	{
 		trace("Purchases: Restored Purchase");
 
-		var purchase = {"purchaseToken": purchaseToken, "purchaseState": purchaseState};
+		var purchase = {"purchaseToken": purchaseToken, "purchaseState": purchaseState, "isAcknowledged": isAcknowledged};
 		purchaseMap.set(productID, purchase);
 		
 		if(purchaseState == PURCHASED)
@@ -110,6 +115,7 @@ class Purchases
 			Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_RESTORE, productID));
 			
 			save();
+			acknowledgePurchase(productID);
 		}
 	}
 
@@ -130,6 +136,7 @@ class Purchases
 	private static var items:Map<String,Int> = new Map<String,Int>();
 	#if android
 	private static var detailMap:Map<String, ProductDetails> = new Map < String, ProductDetails > ();
+	private static var productTypeMap:Map<String, Int> = new Map < String, Int > ();
 	#end
 	private static var purchaseMap:Map<String, PurchaseDetails> = new Map < String, PurchaseDetails > ();
 	
@@ -359,21 +366,40 @@ class Purchases
 		}
 		#end
 	}
-	
-	//Allows item to be rebought on Android without consuming local count
-	public static function consume(productID:String)
+
+	public static function setProductType(productID:String, productType:Int)
 	{
-		#if android
-		if(purchaseMap.exists(productID) && purchaseMap.get(productID).purchaseState == PURCHASED)
-		{
-			if (funcConsume == null) {
-				funcConsume = JNI.createStaticMethod ("com/stencyl/android/AndroidBilling", "consume", "(Ljava/lang/String;)V");
-			}
-			
-			funcConsume (purchaseMap.get(productID).purchaseToken);
-		}
-		#end
+		productTypeMap.set(productID, productType);
+		acknowledgePurchase(productID);
 	}
+
+	#if android
+	private static function acknowledgePurchase(productID:String)
+	{
+		var purchase = purchaseMap.get(productID);
+		if(purchase != null && purchase.purchaseState == PURCHASED && !purchase.isAcknowledged)
+		{
+			if(productTypeMap.get(productID) == TYPE_IAP_CONSUMABLE)
+			{
+				if (funcConsume == null) {
+					funcConsume = JNI.createStaticMethod ("com/stencyl/android/AndroidBilling", "consume", "(Ljava/lang/String;)V");
+				}
+				
+				funcConsume (purchase.purchaseToken);
+				purchase.isAcknowledged = true;
+			}
+			else if(productTypeMap.get(productID) == TYPE_IAP_NONCONSUMABLE)
+			{
+				if (funcAcknowledge == null) {
+					funcAcknowledge = JNI.createStaticMethod ("com/stencyl/android/AndroidBilling", "acknowledge", "(Ljava/lang/String;)V");
+				}
+				
+				funcAcknowledge (purchase.purchaseToken);
+				purchase.isAcknowledged = true;
+			}
+		}
+	}
+	#end
 	
 	public static function getQuantity(productID:String):Int
 	{
@@ -387,6 +413,11 @@ class Purchases
 		#end	
 		
 		#if android
+		if(!productTypeMap.exists(productID))
+		{
+			trace("Error: product \"" + productID + "\" hasn't been set as consumable/nonconsumable yet.");
+		}
+
 		if(funcBuy == null)
 		{
 			funcBuy = JNI.createStaticMethod("com/stencyl/android/AndroidBilling", "buy", "(Ljava/lang/String;)V", true);
@@ -507,6 +538,7 @@ class Purchases
 	#if android	
 	private static var funcInit:Dynamic;
 	private static var funcBuy:Dynamic;
+	private static var funcAcknowledge:Dynamic;
 	private static var funcConsume:Dynamic;
 	private static var funcRestore:Dynamic;
 	private static var funcRelease:Dynamic;

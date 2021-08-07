@@ -10,6 +10,8 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 
+import com.android.billingclient.api.AcknowledgePurchaseParams;
+import com.android.billingclient.api.AcknowledgePurchaseResponseListener;
 import com.android.billingclient.api.BillingClient;
 import com.android.billingclient.api.BillingClientStateListener;
 import com.android.billingclient.api.BillingFlowParams;
@@ -30,6 +32,7 @@ public class AndroidBilling extends Extension implements
         BillingClientStateListener,
         PurchasesUpdatedListener,
         PurchasesResponseListener,
+        AcknowledgePurchaseResponseListener,
         ConsumeResponseListener
 {
     private static AndroidBilling billingInstance;
@@ -167,7 +170,11 @@ public class AndroidBilling extends Extension implements
             for(Purchase purchase : list) {
                 if(Security.verifyPurchase(publicKey, purchase.getOriginalJson(), purchase.getSignature())) {
                     for(String sku : purchase.getSkus()) {
-                        haxeCallback("onPurchase", new Object[] {sku,purchase.getPurchaseToken(),purchase.getPurchaseState()});
+                        haxeCallback("onPurchase", new Object[] {
+                                sku,
+                                purchase.getPurchaseToken(),
+                                purchase.getPurchaseState(),
+                                purchase.isAcknowledged()});
                     }
                 } else {
                     failedPurchase();
@@ -177,6 +184,26 @@ public class AndroidBilling extends Extension implements
             canceledPurchase();
         } else {
             failedPurchase();
+        }
+    }
+
+    @SuppressWarnings("unused")
+    public static void acknowledge(final String purchaseToken)
+    {
+        AcknowledgePurchaseParams acknowledgeParams =
+                AcknowledgePurchaseParams.newBuilder()
+                        .setPurchaseToken(purchaseToken)
+                        .build();
+
+        billingInstance.billingClient.acknowledgePurchase(acknowledgeParams, billingInstance);
+    }
+
+    @Override
+    public void onAcknowledgePurchaseResponse(@NonNull BillingResult billingResult) {
+        if(isOk(billingResult)) {
+            Log.i ("Purchases", "Successfully acknowledge");
+        } else {
+            Log.i ("Purchases", "Failed to acknowledge");
         }
     }
 
@@ -213,7 +240,11 @@ public class AndroidBilling extends Extension implements
             for(Purchase restoredPurchase : list) {
                 if(Security.verifyPurchase(publicKey, restoredPurchase.getOriginalJson(), restoredPurchase.getSignature())) {
                     for (String sku: restoredPurchase.getSkus()) {
-                        haxeCallback("onRestorePurchases", new Object[] {sku, restoredPurchase.getPurchaseToken(), restoredPurchase.getPurchaseState()});
+                        haxeCallback("onRestorePurchases", new Object[] {
+                                sku,
+                                restoredPurchase.getPurchaseToken(),
+                                restoredPurchase.getPurchaseState(),
+                                restoredPurchase.isAcknowledged()});
                     }
                 }
             }

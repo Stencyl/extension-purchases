@@ -20,5 +20,33 @@
             </dropdown>
         </fields>
     </block>
+
+    <block tag="iap-is-pending"
+           code="com.stencyl.purchases.Purchases.isPending(~)"
+           type="normal"
+           returns="boolean"
+           category="mobile"
+           helpURL="game-mobile">
+        <fields>
+            <text order="0"></text>
+        </fields>
+    </block>
+
+    <block tag="iap-set-product-type"
+           code="com.stencyl.purchases.Purchases.setProductType(#0, com.stencyl.purchases.Purchases.#1);"
+           type="action"
+           returns="void"
+           category="mobile"
+           helpURL="game-mobile">
+        <fields>
+            <text order="0"></text>
+            <dropdown order="1">
+                <choices>
+                    <c text="@consumable" code="TYPE_IAP_CONSUMABLE"></c>
+                    <c text="@nonconsumable" code="TYPE_IAP_NONCONSUMABLE"></c>
+                </choices>
+            </dropdown>
+        </fields>
+    </block>
     
 </palette>

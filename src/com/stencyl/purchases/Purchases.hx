@@ -76,15 +76,7 @@ class Purchases
 		
 		if(purchaseState == PURCHASED)
 		{
-			if(hasBought(productID))
-			{
-				items.set(productID, items.get(productID) + 1);
-			}
-				
-			else
-			{
-				items.set(productID, 1);
-			}
+			changeCount(productID, 1);
 			
 			save();
 			
@@ -113,14 +105,7 @@ class Purchases
 		
 		if(purchaseState == PURCHASED)
 		{
-			if(hasBought(productID))
-			{
-				items.set(productID, items.get(productID) + 1);
-			}
-			else
-			{
-				items.set(productID, 1);
-			}
+			changeCount(productID, 1);
 			
 			Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_RESTORE, productID));
 			
@@ -176,14 +161,7 @@ class Purchases
 				"transactionID": Reflect.field(inEvent, "transactionID")
 			});
 			
-			if(hasBought(productID))
-			{
-				items.set(productID, items.get(productID) + 1);
-			}
-			else
-			{
-				items.set(productID, 1);
-			}
+			changeCount(productID, 1);
 			
 			Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_SUCCESS, data));
 			
@@ -211,14 +189,7 @@ class Purchases
 				"transactionID": Reflect.field(inEvent, "transactionID")
 			});
 			
-			if(hasBought(productID))
-			{
-				items.set(productID, items.get(productID) + 1);
-			}
-			else
-			{
-				items.set(productID, 1);
-			}
+			changeCount(productID, 1);
 			
 			Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_RESTORE, data));
 			
@@ -236,15 +207,7 @@ class Purchases
 		{
 			var productID = data;
 			
-			if(hasBought(productID))
-			{
-				items.set(productID, items.get(productID) + 1);
-			}
-			
-			else
-			{
-				items.set(productID, 1);
-			}
+			changeCount(productID, 1);
 		
 			save();
 		}
@@ -351,16 +314,23 @@ class Purchases
 	
 	//True if they've bought this before. If consumable, if they have 1 or more of it.
 	public static function hasBought(productID:String)
-	{			
+	{
+		return getCount(productID) > 0;
+	}
+
+	private static function getCount(productID:String)
+	{
 		#if mobile
-		if(items == null)
-		{
-			return false;
-		}
-		
-		return items.exists(productID) && items.get(productID) > 0;
+		return items.exists(productID) ? items.get(productID) : 0;
 		#else
-		return false;
+		return 0;
+		#end
+	}
+
+	private static function changeCount(productID:String, amount:Int)
+	{
+		#if mobile
+		items.set(productID, getCount(productID) + amount);
 		#end
 	}
 
@@ -382,9 +352,9 @@ class Purchases
 	public static function use(productID:String)
 	{
 		#if mobile
-		if(hasBought(productID))
+		if(getCount(productID) > 0)
 		{
-			items.set(productID, items.get(productID) - 1);
+			changeCount(productID, -1);
 			save();
 		}
 		#end
@@ -407,14 +377,7 @@ class Purchases
 	
 	public static function getQuantity(productID:String):Int
 	{
-		#if mobile
-		if(hasBought(productID))
-		{
-			return items.get(productID);
-		}
-		#end
-		
-		return 0;
+		return getCount(productID);
 	}
 
 	public static function buy(productID:String):Void 

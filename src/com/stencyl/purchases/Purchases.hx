@@ -101,21 +101,27 @@ class Purchases
 		Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_CANCEL, productID));
 	}
 	
-	public function onRestorePurchases(productID:String, purchaseToken:String, purchaseState:Int, isAcknowledged:Bool)
+	public function onRestorePurchases(productID:String, purchaseToken:String, purchaseState:Int, isAcknowledged:Bool, isInit:Bool)
 	{
 		trace("Purchases: Restored Purchase");
 
 		var purchase = {"purchaseToken": purchaseToken, "purchaseState": purchaseState, "isAcknowledged": isAcknowledged};
 		purchaseMap.set(productID, purchase);
 		
-		if(purchaseState == PURCHASED)
+		//only changeCount if count is 0 (this is a new device) or if the purchase has not yet been acknowledged.
+		if(purchaseState == PURCHASED && (getCount(productID) == 0 || !isAcknowledged))
 		{
 			changeCount(productID, 1);
 			
-			Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_RESTORE, productID));
-			
 			save();
-			acknowledgePurchase(productID);
+			if(!isAcknowledged) {
+				acknowledgePurchase(productID);
+				Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_SUCCESS, productID));
+			}
+			else if(!isInit)
+			{
+				Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_RESTORE, productID));
+			}
 		}
 	}
 

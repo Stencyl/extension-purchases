@@ -9,6 +9,7 @@ import android.os.Bundle;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import com.android.billingclient.api.AcknowledgePurchaseParams;
 import com.android.billingclient.api.AcknowledgePurchaseResponseListener;
@@ -19,6 +20,8 @@ import com.android.billingclient.api.BillingResult;
 import com.android.billingclient.api.ConsumeParams;
 import com.android.billingclient.api.ConsumeResponseListener;
 import com.android.billingclient.api.Purchase;
+import com.android.billingclient.api.PurchaseHistoryRecord;
+import com.android.billingclient.api.PurchaseHistoryResponseListener;
 import com.android.billingclient.api.PurchasesResponseListener;
 import com.android.billingclient.api.PurchasesUpdatedListener;
 import com.android.billingclient.api.SkuDetails;
@@ -32,6 +35,7 @@ public class AndroidBilling extends Extension implements
         BillingClientStateListener,
         PurchasesUpdatedListener,
         PurchasesResponseListener,
+        PurchaseHistoryResponseListener,
         AcknowledgePurchaseResponseListener,
         ConsumeResponseListener
 {
@@ -40,6 +44,7 @@ public class AndroidBilling extends Extension implements
     private static String publicKey = "";
     private static HaxeObject callback = null;
 
+    private static boolean readPurchasesCache = false;
     private static String lastPurchaseAttempt = "";
 
     private BillingClient billingClient;
@@ -98,9 +103,31 @@ public class AndroidBilling extends Extension implements
     @Override
     public void onBillingSetupFinished(@NonNull BillingResult billingResult) {
         if(isOk(billingResult)) {
+            billingInstance.billingClient.queryPurchasesAsync(BillingClient.SkuType.INAPP, billingInstance);
             haxeCallback("onStarted", new Object[] { "Success" });
         } else {
             haxeCallback("onStarted", new Object[] { "Failure" });
+        }
+    }
+
+    @Override
+    public void onQueryPurchasesResponse(@NonNull BillingResult billingResult, @NonNull List<Purchase> list) {
+        boolean isInit = !readPurchasesCache;
+        readPurchasesCache = true;
+        
+        if(isOk(billingResult)) {
+            for(Purchase restoredPurchase : list) {
+                if(Security.verifyPurchase(publicKey, restoredPurchase.getOriginalJson(), restoredPurchase.getSignature())) {
+                    for (String sku: restoredPurchase.getSkus()) {
+                        haxeCallback("onRestorePurchases", new Object[] {
+                                sku,
+                                restoredPurchase.getPurchaseToken(),
+                                restoredPurchase.getPurchaseState(),
+                                restoredPurchase.isAcknowledged(),
+                                isInit});
+                    }
+                }
+            }
         }
     }
 
@@ -230,24 +257,14 @@ public class AndroidBilling extends Extension implements
     @SuppressWarnings("unused")
     public static void restore() {
          Log.i("Purchases", "Attempt to Restore Purchases");
-         
-         billingInstance.billingClient.queryPurchasesAsync(BillingClient.SkuType.INAPP, billingInstance);
+
+         billingInstance.billingClient.queryPurchaseHistoryAsync(BillingClient.SkuType.INAPP, billingInstance);
      }
 
     @Override
-    public void onQueryPurchasesResponse(@NonNull BillingResult billingResult, @NonNull List<Purchase> list) {
+    public void onPurchaseHistoryResponse(@NonNull BillingResult billingResult, @Nullable List<PurchaseHistoryRecord> list) {
         if(isOk(billingResult)) {
-            for(Purchase restoredPurchase : list) {
-                if(Security.verifyPurchase(publicKey, restoredPurchase.getOriginalJson(), restoredPurchase.getSignature())) {
-                    for (String sku: restoredPurchase.getSkus()) {
-                        haxeCallback("onRestorePurchases", new Object[] {
-                                sku,
-                                restoredPurchase.getPurchaseToken(),
-                                restoredPurchase.getPurchaseState(),
-                                restoredPurchase.isAcknowledged()});
-                    }
-                }
-            }
+            billingInstance.billingClient.queryPurchasesAsync(BillingClient.SkuType.INAPP, billingInstance);
         }
     }
 

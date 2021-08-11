@@ -84,8 +84,6 @@ class Purchases
 			
 			save();
 			acknowledgePurchase(productID);
-
-			Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_SUCCESS, productID));
 		}
 	}
 	
@@ -116,7 +114,6 @@ class Purchases
 			save();
 			if(!isAcknowledged) {
 				acknowledgePurchase(productID);
-				Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_SUCCESS, productID));
 			}
 			else if(!isInit)
 			{
@@ -393,6 +390,7 @@ class Purchases
 				
 				funcConsume (purchase.purchaseToken);
 				purchase.isAcknowledged = true;
+				Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_SUCCESS, productID));
 			}
 			else if(productTypeMap.get(productID) == TYPE_IAP_NONCONSUMABLE)
 			{
@@ -402,6 +400,7 @@ class Purchases
 				
 				funcAcknowledge (purchase.purchaseToken);
 				purchase.isAcknowledged = true;
+				Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_SUCCESS, productID));
 			}
 		}
 	}

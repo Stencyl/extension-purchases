@@ -139,8 +139,8 @@ class Purchases
 	private static var items:Map<String,Int> = new Map<String,Int>();
 	#if android
 	private static var detailMap:Map<String, ProductDetails> = new Map < String, ProductDetails > ();
-	private static var productTypeMap:Map<String, Int> = new Map < String, Int > ();
 	#end
+	private static var productTypeMap:Map<String, Int> = new Map < String, Int > ();
 	private static var purchaseMap:Map<String, PurchaseDetails> = new Map < String, PurchaseDetails > ();
 	
 	#if ios
@@ -373,7 +373,9 @@ class Purchases
 	public static function setProductType(productID:String, productType:Int)
 	{
 		productTypeMap.set(productID, productType);
+		#if android
 		acknowledgePurchase(productID);
+		#end
 	}
 
 	#if android

@@ -1,24 +1,20 @@
 package com.stencyl.purchases;
 
-import openfl.net.SharedObject;
-import openfl.net.SharedObjectFlushStatus;
+import com.stencyl.Engine;
+import com.stencyl.behavior.Script;
+import com.stencyl.behavior.TimedTask;
+import com.stencyl.event.StencylEvent;
+import com.stencyl.models.Scene;
+import com.stencyl.utils.Utils;
 
-#if android
+#if ios
+import lime.system.CFFI;
+#elseif android
 import lime.system.JNI;
 #end
 
-import com.stencyl.Engine;
-import com.stencyl.event.EventMaster;
-import com.stencyl.event.StencylEvent;
-import com.stencyl.behavior.Script;
-import com.stencyl.behavior.TimedTask;
-
-import lime.system.CFFI;
-
-import openfl.events.EventDispatcher;
-import openfl.events.Event;
-
-import haxe.Json;
+import openfl.net.SharedObject;
+import openfl.net.SharedObjectFlushStatus;
 
 #if ios
 typedef PurchaseDetails = {

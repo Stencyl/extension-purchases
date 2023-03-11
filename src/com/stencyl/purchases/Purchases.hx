@@ -41,8 +41,8 @@ typedef ProductDetails = {
 #end
 class Purchases
 {	
-	public static var TYPE_IAP_CONSUMABLE = 1;
-    public static var TYPE_IAP_NONCONSUMABLE = 2;
+	public static final TYPE_IAP_CONSUMABLE = 1;
+    public static final TYPE_IAP_NONCONSUMABLE = 2;
 
 	private static var initialized:Bool = false;
 	private static var items:Map<String,Int> = new Map<String,Int>();
@@ -380,8 +380,8 @@ class Purchases
 	//Callbacks
 
 	#if android
-	private static var PURCHASED:Int = 1;
-    private static var PENDING:Int = 2;
+	private static final PURCHASED:Int = 1;
+    private static final PENDING:Int = 2;
 
     public function onStarted()
 	{

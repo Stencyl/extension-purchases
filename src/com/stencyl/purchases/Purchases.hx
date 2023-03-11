@@ -41,91 +41,8 @@ typedef ProductDetails = {
 #end
 class Purchases
 {	
-	#if android
-	//Used for Android callbacks from Java
-	public function new()
-	{
-	}
-	#end
-	
 	public static var TYPE_IAP_CONSUMABLE = 1;
     public static var TYPE_IAP_NONCONSUMABLE = 2;
-
-	#if android
-	private static var PURCHASED:Int = 1;
-    private static var PENDING:Int = 2;
-
-    public function onStarted()
-	{
-		trace("Purchases: Started");
-		Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_READY, ""));
-		
-		initialized = true;
-	}
-
-    public function onPurchase(productID:String, purchaseToken:String, purchaseState:Int, isAcknowledged:Bool)
-	{
-		trace("Purchases: Successful Purchase");
-		
-		var purchase = {"purchaseToken": purchaseToken, "purchaseState": purchaseState, "isAcknowledged": isAcknowledged};
-		purchaseMap.set(productID, purchase);
-		
-		if(purchaseState == PURCHASED && !isAcknowledged)
-		{
-			changeCount(productID, 1);
-			
-			save();
-			acknowledgePurchase(productID);
-		}
-	}
-	
-	public function onFailedPurchase(productID:String)
-	{
-		trace("Purchases: Failed Purchase");
-		Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_FAIL, productID));
-	}
-	
-	public function onCanceledPurchase(productID:String)
-	{
-		trace("Purchases: Canceled Purchase");
-		Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_CANCEL, productID));
-	}
-	
-	public function onRestorePurchases(productID:String, purchaseToken:String, purchaseState:Int, isAcknowledged:Bool, isInit:Bool)
-	{
-		trace("Purchases: Restored Purchase");
-
-		var purchase = {"purchaseToken": purchaseToken, "purchaseState": purchaseState, "isAcknowledged": isAcknowledged};
-		purchaseMap.set(productID, purchase);
-		
-		//only changeCount if count is 0 (this is a new device) or if the purchase has not yet been acknowledged.
-		if(purchaseState == PURCHASED && (getCount(productID) == 0 || !isAcknowledged))
-		{
-			changeCount(productID, 1);
-			
-			save();
-			if(!isAcknowledged) {
-				acknowledgePurchase(productID);
-			}
-			else if(!isInit)
-			{
-				Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_RESTORE, productID));
-			}
-		}
-	}
-
-	public function onProductsVerified(productID:String, title:String, desc:String, price:String)
-	{
-		trace("Purchases: Products Verified");
-		
-		detailMap.set(productID, {"title": title, "description": desc, "price": price});
-		Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_PRODUCTS_VERIFIED, productID));
-	}
-	#end
-
-	//---------------------------------------------
-
-
 
 	private static var initialized:Bool = false;
 	private static var items:Map<String,Int> = new Map<String,Int>();
@@ -134,85 +51,11 @@ class Purchases
 	#end
 	private static var productTypeMap:Map<String, Int> = new Map < String, Int > ();
 	private static var purchaseMap:Map<String, PurchaseDetails> = new Map < String, PurchaseDetails > ();
-	
-	#if ios
-	private static function registerHandle()
-	{
-		set_event_handle(notifyListeners);
-	}
-	
-	private static function notifyListeners(inEvent:Dynamic)
-	{
-		var type:String = Std.string(Reflect.field(inEvent, "type"));
-		var data:String = Std.string(Reflect.field(inEvent, "data"));
-		
-		if(type == "started")
-		{
-			trace("Purchases: Started");
-			Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_READY, data));
-		}
-		
-		else if(type == "success")
-		{
-			trace("Purchases: Successful Purchase");
-			
-			var productID = data;
-			
-			purchaseMap.set(productID, {
-				"receiptString": Reflect.field(inEvent, "receiptString"),
-				"transactionID": Reflect.field(inEvent, "transactionID")
-			});
-			
-			changeCount(productID, 1);
-			
-			Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_SUCCESS, data));
-			
-			save();
-		}
-		
-		else if(type == "failed")
-		{
-			trace("Purchases: Failed Purchase");
-			Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_FAIL, data));
-		}
-		
-		else if(type == "cancel")
-		{
-			trace("Purchases: Canceled Purchase");
-			Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_CANCEL, data));
-		}
-		
-		else if(type == "restore")
-		{
-			var productID = data;
-			
-			purchaseMap.set(productID, {
-				"receiptString": Reflect.field(inEvent, "receiptString"),
-				"transactionID": Reflect.field(inEvent, "transactionID")
-			});
-			
-			changeCount(productID, 1);
-			
-			Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_RESTORE, data));
-			
-			save();
-		}
 
-		else if(type == "productsVerified")
-		{
-			trace("Purchases: Products Verified");
-			Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_PRODUCTS_VERIFIED, data));
-		}
-		
-		//Consumable
-		if(type == "success")
-		{
-			var productID = data;
-			
-			changeCount(productID, 1);
-		
-			save();
-		}
+	#if android
+	//Used for Android callbacks from Java
+	public function new()
+	{
 	}
 	#end
 	
@@ -533,6 +376,163 @@ class Purchases
 		}, null);
 		#end
 	}
+
+	//Callbacks
+
+	#if android
+	private static var PURCHASED:Int = 1;
+    private static var PENDING:Int = 2;
+
+    public function onStarted()
+	{
+		trace("Purchases: Started");
+		Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_READY, ""));
+		
+		initialized = true;
+	}
+
+    public function onPurchase(productID:String, purchaseToken:String, purchaseState:Int, isAcknowledged:Bool)
+	{
+		trace("Purchases: Successful Purchase");
+		
+		var purchase = {"purchaseToken": purchaseToken, "purchaseState": purchaseState, "isAcknowledged": isAcknowledged};
+		purchaseMap.set(productID, purchase);
+		
+		if(purchaseState == PURCHASED && !isAcknowledged)
+		{
+			changeCount(productID, 1);
+			
+			save();
+			acknowledgePurchase(productID);
+		}
+	}
+	
+	public function onFailedPurchase(productID:String)
+	{
+		trace("Purchases: Failed Purchase");
+		Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_FAIL, productID));
+	}
+	
+	public function onCanceledPurchase(productID:String)
+	{
+		trace("Purchases: Canceled Purchase");
+		Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_CANCEL, productID));
+	}
+	
+	public function onRestorePurchases(productID:String, purchaseToken:String, purchaseState:Int, isAcknowledged:Bool, isInit:Bool)
+	{
+		trace("Purchases: Restored Purchase");
+
+		var purchase = {"purchaseToken": purchaseToken, "purchaseState": purchaseState, "isAcknowledged": isAcknowledged};
+		purchaseMap.set(productID, purchase);
+		
+		//only changeCount if count is 0 (this is a new device) or if the purchase has not yet been acknowledged.
+		if(purchaseState == PURCHASED && (getCount(productID) == 0 || !isAcknowledged))
+		{
+			changeCount(productID, 1);
+			
+			save();
+			if(!isAcknowledged) {
+				acknowledgePurchase(productID);
+			}
+			else if(!isInit)
+			{
+				Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_RESTORE, productID));
+			}
+		}
+	}
+
+	public function onProductsVerified(productID:String, title:String, desc:String, price:String)
+	{
+		trace("Purchases: Products Verified");
+		
+		detailMap.set(productID, {"title": title, "description": desc, "price": price});
+		Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_PRODUCTS_VERIFIED, productID));
+	}
+	#end
+
+	#if ios
+	private static function registerHandle()
+	{
+		set_event_handle(notifyListeners);
+	}
+	
+	private static function notifyListeners(inEvent:Dynamic)
+	{
+		var type:String = Std.string(Reflect.field(inEvent, "type"));
+		var data:String = Std.string(Reflect.field(inEvent, "data"));
+		
+		if(type == "started")
+		{
+			trace("Purchases: Started");
+			Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_READY, data));
+		}
+		
+		else if(type == "success")
+		{
+			trace("Purchases: Successful Purchase");
+			
+			var productID = data;
+			
+			purchaseMap.set(productID, {
+				"receiptString": Reflect.field(inEvent, "receiptString"),
+				"transactionID": Reflect.field(inEvent, "transactionID")
+			});
+			
+			changeCount(productID, 1);
+			
+			Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_SUCCESS, data));
+			
+			save();
+		}
+		
+		else if(type == "failed")
+		{
+			trace("Purchases: Failed Purchase");
+			Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_FAIL, data));
+		}
+		
+		else if(type == "cancel")
+		{
+			trace("Purchases: Canceled Purchase");
+			Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_CANCEL, data));
+		}
+		
+		else if(type == "restore")
+		{
+			var productID = data;
+			
+			purchaseMap.set(productID, {
+				"receiptString": Reflect.field(inEvent, "receiptString"),
+				"transactionID": Reflect.field(inEvent, "transactionID")
+			});
+			
+			changeCount(productID, 1);
+			
+			Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_RESTORE, data));
+			
+			save();
+		}
+
+		else if(type == "productsVerified")
+		{
+			trace("Purchases: Products Verified");
+			Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_PRODUCTS_VERIFIED, data));
+		}
+		
+		//Consumable
+		if(type == "success")
+		{
+			var productID = data;
+			
+			changeCount(productID, 1);
+		
+			save();
+		}
+	}
+	#end
+
+	//Foreign functions
 	
 	#if android	
 	private static var funcInit:Dynamic;

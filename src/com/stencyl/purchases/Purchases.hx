@@ -1,9 +1,7 @@
 package com.stencyl.purchases;
 
-#if !js
 import openfl.net.SharedObject;
 import openfl.net.SharedObjectFlushStatus;
-#end
 
 #if android
 import lime.system.JNI;
@@ -54,22 +52,20 @@ class Purchases
 	}
 	#end
 	
-	public function onStarted()
-	{
-		trace("Purchases: Started");
-		Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_READY, ""));
-		
-		#if android
-		initialized = true;
-		#end
-	}
-
 	public static var TYPE_IAP_CONSUMABLE = 1;
     public static var TYPE_IAP_NONCONSUMABLE = 2;
 
 	#if android
 	private static var PURCHASED:Int = 1;
     private static var PENDING:Int = 2;
+
+    public function onStarted()
+	{
+		trace("Purchases: Started");
+		Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_READY, ""));
+		
+		initialized = true;
+	}
 
     public function onPurchase(productID:String, purchaseToken:String, purchaseState:Int, isAcknowledged:Bool)
 	{

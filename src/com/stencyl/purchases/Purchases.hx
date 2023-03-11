@@ -105,7 +105,6 @@ class Purchases
 	
 	private static function load()
 	{
-		#if mobile
 		try 
 		{
 			var data = SharedObject.getLocal("in-app-purchases");
@@ -122,12 +121,10 @@ class Purchases
 		{
 			trace("Error! Failed to load purchases: " + e);
 		}
-		#end
 	}
 	
 	private static function save()
 	{
-		#if mobile
 		var so = SharedObject.getLocal("in-app-purchases");
 		Reflect.setField(so.data, "data", items);
 		
@@ -154,7 +151,6 @@ class Purchases
 		            trace("Saved Purchases");
 		    }
 		}
-		#end
 	}
 	
 	//True if they've bought this before. If consumable, if they have 1 or more of it.
@@ -165,18 +161,12 @@ class Purchases
 
 	private static function getCount(productID:String)
 	{
-		#if mobile
 		return items.exists(productID) ? items.get(productID) : 0;
-		#else
-		return 0;
-		#end
 	}
 
 	private static function changeCount(productID:String, amount:Int)
 	{
-		#if mobile
 		items.set(productID, getCount(productID) + amount);
-		#end
 	}
 
 	public static function isPending(productID:String)
@@ -196,13 +186,11 @@ class Purchases
 	//Uses up a "consumable" (decrements its count by 1).
 	public static function use(productID:String)
 	{
-		#if mobile
 		if(getCount(productID) > 0)
 		{
 			changeCount(productID, -1);
 			save();
 		}
-		#end
 	}
 
 	public static function setProductType(productID:String, productType:Int)
@@ -298,9 +286,9 @@ class Purchases
 		{
 			return detailMap.get(productID).title;
 		}
-		#end
 		
 		return "None";
+		#end
 	}
 	
 	public static function getDescription(productID:String):String 
@@ -314,9 +302,9 @@ class Purchases
 		{
 			return detailMap.get(productID).description;
 		}
-		#end
 		
 		return "None";
+		#end
 	}
 	
 	public static function getPrice(productID:String):String 
@@ -330,9 +318,9 @@ class Purchases
 		{
 			return detailMap.get(productID).price;
 		}
-		#end
 		
 		return "None";
+		#end
 	}
 	
 	public static function canBuy():Bool 

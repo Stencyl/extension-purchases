@@ -1,0 +1,65 @@
+# blocks
+
+iap-buy-use=%0 product with ID %1 [c:money]
+iap-buy-use.help=Make an in-app purchase or use a consumable one instantly. Buying will prompt user.
+iap-free-unmanaged=free unmanaged android purchase with ID %0 [c:money]
+iap-free-unmanaged.help=Must be used to repurchase unmanaged in-app purchases on Android.
+iap-get-quantity=get product quantity for ID %0 [c:money]
+iap-get-quantity.help=Get number of items (for a consumable product)
+iap-loaded=player can make purchases [c:money]
+iap-loaded.help=Returns true if the purchases have been loaded in from iTunes
+iap-purchased=purchased product with ID %0 [c:money]
+iap-purchased.help=Has the user already purchased this? (for non-consumable products)
+iap-request-info=request info for product with ID %0 [c:money]
+iap-request-info.help=Must be used before working with an in-app purchase. One per purchase ID.
+iap-restore=restore purchases [c:money]
+iap-restore.help=Restore player's purchases (if they're on a new device for example)
+iap-title-desc-price=%0 for product with ID %1 [c:money]
+iap-title-desc-price.help=Product title / description / price that you entered into iTunes Connect
+iap-validated=iOS validate receipt for product with ID %0 with shared secret key: %1 in %2 [c:money]
+iap-validated.help=Optional: Validate Receipt with Itunes before player get items, ID='productID' Shared Secret:'ITunesConnect->Your game->In-App Purchases->View Shared Secret' select Sandbox when testing
+
+iap-is-pending=product with ID %0 is pending [i:money]
+iap-is-pending.help=If a transaction was started, but hasn't completed yet, a product is pending (for example, a product may be paid for later in cash).
+
+iap-set-product-type=mark product with ID %0 as %1 [i:money]
+iap-set-product-type.help=All purchases must be set to either consumable or non-consumable before purchasing
+
+# events
+
+event-mobile-purchases=when %0 [e:dash] %2
+event-mobile-purchases.help=When the player does a purchase.
+
+mobile-purchase-id=product ID [c:money]
+mobile-purchase-id.help=The product ID of the product that triggered this event.
+
+events.defs.purchases=Purchases
+
+# block dropdowns
+
+production=production
+sandbox=sandbox
+consumable=consumable
+nonconsumable=non-consumable
+buy=buy
+use=use
+title=title
+desc=description
+price=price
+event.mobile.purchases.ready=player can purchase goods
+event.mobile.purchases.success=a purchase succeeds
+event.mobile.purchases.fail=a purchase fails
+event.mobile.purchases.restore=a purchase is restored
+event.mobile.purchases.cancel=a purchase is canceled
+event.mobile.purchases.request=a product info request succeeds
+event.mobile.purchases.validate=a product validate succeeds (iOS)
+
+# gui
+
+mobile.settings.money.purchases=In-App Purchases
+
+fields.enablePurchases.label=Enable Purchases
+fields.enablePurchases.hint=Defaults to off because Google blocks apps with purchases from some countries.
+
+fields.androidPublicKey.label=Android Public Key
+fields.androidPublicKey.hint=Public key for Android in-app purchases.

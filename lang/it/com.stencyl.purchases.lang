@@ -1,0 +1,17 @@
+buy=compra
+use=usa
+iap-buy-use=%0 prodotto con ID: %1 [c:money]
+iap-buy-use.help=Fai un acquisto in-app oppure utilizza un consumabile istantaneamente. Verrà richiesta conferma acquisto all'utente.
+iap-get-quantity=ottieni la quantità del prodotto per ID: %0 [c:money]
+iap-get-quantity.help=Restituisce il numero di elementi (per un prodotto consumabile)
+iap-loaded=giocatore può acquistare [c:money]
+iap-loaded.help=Ritorna vero se l'acquisto è stato caricando da iTunes
+iap-purchased=acquistato prodotto con ID: %0 [c:money]
+iap-purchased.help=L'utente lo ha già acquistato? (per prodotti non consumabili)
+iap-restore=ripristina acquisto [c:money]
+iap-restore.help=Ripristina gli acquisti del giocatore (ad esempio se utilizza un nuovo dispositivo)
+title=titolo
+desc=descrizione
+price=prezzo
+iap-title-desc-price=%0 per prodotto con ID: %1 [c:money]
+iap-title-desc-price.help=Titolo prodotto / descrizione / prezzo che hai inserito in iTunes Connect

@@ -1,0 +1,9 @@
+iap-loaded=εκκίνηση αγορών
+iap-loaded.help=Επιστρέφει αληθώς αν οι αγορές έχουν φορτωθεί από το iTunes
+iap-purchased=ο χρήστης αγόρασε το προϊόν με ID: %0 [c:mobile]
+iap-purchased.help=Έχει αγοραστεί ήδη από των χρήστη; (για μη αναλώσιμα προϊόντα)
+title=τίτλος
+desc=περιγραφή
+price=τιμή
+iap-title-desc-price=%0 για προιόν με ID: %1
+iap-title-desc-price.help=Τίτλος προϊόντος / περιγραφή / τιμή που εισάγατε στο iTunes Connect

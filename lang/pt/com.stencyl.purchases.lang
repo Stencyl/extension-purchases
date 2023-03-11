@@ -1,0 +1,9 @@
+iap-loaded=compras estão iniciadas
+iap-loaded.help=Retorna como verdadeiro se as compras foram abertas no iTunes
+iap-purchased=usuário comprou produto com ID: %0 [c:mobile]
+iap-purchased.help=O utilizador já comprou isto? (para produtos não consumiveis)
+title=titlo
+desc=descrição
+price=preço
+iap-title-desc-price=%0 para produto com ID: %1
+iap-title-desc-price.help=Título do produto / descrição / preço que foi definido no iTunes Connect

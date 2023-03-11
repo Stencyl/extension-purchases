@@ -1,0 +1,9 @@
+iap-loaded=покупку товара начата
+iap-loaded.help=Возвращает «Истина», если оплаченный товар загружен из iTunes.
+iap-purchased=пользователь произвёл покупку товара с личн.№: %0 [c:mobile]
+iap-purchased.help=Пользователь уже оплатил это? (для нерасходуемых продуктов)
+title=заголовок
+desc=описание
+price=цена
+iap-title-desc-price=%0 за товар с личн.№: %1
+iap-title-desc-price.help=Название продукта/описание/цена, который вы ввели в iTunes Connect.

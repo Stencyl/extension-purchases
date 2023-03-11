@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<stencyl-addons>
+
+	<events-addon target="stencyl-behavior-events">
+		<merge-section id="mobile.monetization">
+			<event block="event-mobile-purchases" menuText="@events.defs.purchases" description="@events.defs.purchases" icon="money" menuIcon="money" />
+		</merge-section>
+	</events-addon>
+
+	<palette-addon target="stencyl-behavior-palette">
+		<merge-section id="game.mobile">
+			<header title="@events.defs.purchases" icon="question" action="help:in-app-purchases" />
+			<block tag="iap-request-info" />
+			<block tag="iap-loaded" />
+			<spacer />
+			<block tag="iap-buy-use" />
+			<block tag="iap-free-unmanaged" />
+			<block tag="iap-purchased" />
+			<block tag="iap-get-quantity" />
+			<spacer />
+			<block tag="iap-validated" />
+			<spacer />
+			<block tag="iap-restore" />
+			<block tag="iap-title-desc-price" />
+		</merge-section>
+	</palette-addon>
+
+	<property-page-addon target="dashboard.sidebar">
+		<header label="@mobile.settings.money.purchases"/>
+		<field name="enablePurchases" />
+		<field name="androidPublicKey" />
+	</property-page-addon>
+
+</stencyl-addons>

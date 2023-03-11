@@ -1,9 +1,9 @@
 package com.stencyl.purchases;
 
-import com.stencyl.Engine;
+import com.stencyl.Extension;
 import com.stencyl.behavior.Script;
 import com.stencyl.behavior.TimedTask;
-import com.stencyl.event.StencylEvent;
+import com.stencyl.event.Event;
 import com.stencyl.models.Scene;
 import com.stencyl.utils.Utils;
 
@@ -15,6 +15,8 @@ import lime.system.JNI;
 
 import openfl.net.SharedObject;
 import openfl.net.SharedObjectFlushStatus;
+
+using com.stencyl.event.EventDispatcher;
 
 #if ios
 typedef PurchaseDetails = {
@@ -34,15 +36,32 @@ typedef ProductDetails = {
 }
 #end
 
+typedef PurchaseEventData = {
+	var eventType:EventType;
+	var productID:String;
+}
+
+enum EventType {
+	PURCHASE_READY;
+	PURCHASE_SUCCESS;
+	PURCHASE_FAIL;
+	PURCHASE_CANCEL;
+	PURCHASE_RESTORE;
+	PURCHASE_PRODUCT_VALIDATED;
+	PURCHASE_PRODUCT_VERIFIED;
+}
+
 #if ios
 @:buildXml('<include name="${haxelib:com.stencyl.purchases}/project/Build.xml"/>')
 //This is just here to prevent the otherwise indirectly referenced native code from bring stripped at link time.
 @:cppFileCode('extern "C" int purchases_register_prims();void com_stencyl_purchases_link(){purchases_register_prims();}')
 #end
-class Purchases
-{	
+class Purchases extends Extension
+{
 	public static final TYPE_IAP_CONSUMABLE = 1;
     public static final TYPE_IAP_NONCONSUMABLE = 2;
+
+	private static var instance:Purchases;
 
 	private static var initialized:Bool = false;
 	private static var items:Map<String,Int> = new Map<String,Int>();
@@ -51,15 +70,23 @@ class Purchases
 	#end
 	private static var productTypeMap:Map<String, Int> = new Map < String, Int > ();
 	private static var purchaseMap:Map<String, PurchaseDetails> = new Map < String, PurchaseDetails > ();
+	
+	//stencyl events
+	public var purchaseEvent:Event<(eventType:EventType,productID:String)->Void>;
+	public var nativeEventQueue:Array<PurchaseEventData> = [];
 
-	#if android
-	//Used for Android callbacks from Java
+	public static function get()
+	{
+		return instance;
+	}
+
 	public function new()
 	{
+		super();
+		instance = this;
 	}
-	#end
-	
-	public static function initialize(publicKey:String = ""):Void 
+
+	public override function initialize():Void 
 	{
 		#if ios
 		if(!initialized)
@@ -80,12 +107,37 @@ class Purchases
 			load();			
 		}
 		
+		PurchasesConfig.load();
+
 		var args = new Array<Dynamic>();
-		args.push(publicKey);
-		args.push(new Purchases());
+		args.push(PurchasesConfig.androidPublicKey);
+		args.push(this);
 		funcInit(args);
 		#end
 	}
+
+	//Stencyl event plumbing
+
+	public override function loadScene(scene:Scene)
+	{
+		purchaseEvent = new Event<(EventType,String)->Void>();
+	}
+	
+	public override function cleanupScene()
+	{
+		purchaseEvent = null;
+	}
+
+	public override function preSceneUpdate()
+	{
+		for(event in nativeEventQueue)
+		{
+			purchaseEvent.dispatch(event.eventType, event.productID);
+		}
+		nativeEventQueue.splice(0, nativeEventQueue.length);
+	}
+
+	//Design Mode blocks
 	
 	public static function restorePurchases():Void
 	{
@@ -215,7 +267,7 @@ class Purchases
 				
 				funcConsume (purchase.purchaseToken);
 				purchase.isAcknowledged = true;
-				Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_SUCCESS, productID));
+				instance.nativeEventQueue.push({"eventType": PURCHASE_SUCCESS, "productID": productID});
 			}
 			else if(productTypeMap.get(productID) == TYPE_IAP_NONCONSUMABLE)
 			{
@@ -225,7 +277,7 @@ class Purchases
 				
 				funcAcknowledge (purchase.purchaseToken);
 				purchase.isAcknowledged = true;
-				Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_SUCCESS, productID));
+				instance.nativeEventQueue.push({"eventType": PURCHASE_SUCCESS, "productID": productID});
 			}
 		}
 	}
@@ -358,7 +410,7 @@ class Purchases
 		{
 			if(purchases_validate(receiptVar,password,URL))
 			{
-				Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_PRODUCT_VALIDATED, productID));
+				instance.nativeEventQueue.push({"eventType": PURCHASE_PRODUCT_VALIDATED, "productID": productID});
 			}
 			
 		}, null);
@@ -374,7 +426,7 @@ class Purchases
     public function onStarted()
 	{
 		trace("Purchases: Started");
-		Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_READY, ""));
+		instance.nativeEventQueue.push({"eventType": PURCHASE_READY, "productID": ""});
 		
 		initialized = true;
 	}
@@ -398,13 +450,13 @@ class Purchases
 	public function onFailedPurchase(productID:String)
 	{
 		trace("Purchases: Failed Purchase");
-		Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_FAIL, productID));
+		instance.nativeEventQueue.push({"eventType": PURCHASE_FAIL, "productID": productID});
 	}
 	
 	public function onCanceledPurchase(productID:String)
 	{
 		trace("Purchases: Canceled Purchase");
-		Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_CANCEL, productID));
+		instance.nativeEventQueue.push({"eventType": PURCHASE_CANCEL, "productID": productID});
 	}
 	
 	public function onRestorePurchases(productID:String, purchaseToken:String, purchaseState:Int, isAcknowledged:Bool, isInit:Bool)
@@ -425,7 +477,7 @@ class Purchases
 			}
 			else if(!isInit)
 			{
-				Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_RESTORE, productID));
+				instance.nativeEventQueue.push({"eventType": PURCHASE_RESTORE, "productID": productID});
 			}
 		}
 	}
@@ -435,7 +487,7 @@ class Purchases
 		trace("Purchases: Products Verified");
 		
 		detailMap.set(productID, {"title": title, "description": desc, "price": price});
-		Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_PRODUCTS_VERIFIED, productID));
+		instance.nativeEventQueue.push({"eventType": PURCHASE_PRODUCT_VERIFIED, "productID": productID});
 	}
 	#end
 
@@ -453,7 +505,7 @@ class Purchases
 		if(type == "started")
 		{
 			trace("Purchases: Started");
-			Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_READY, data));
+			instance.nativeEventQueue.push({"eventType": PURCHASE_READY, "productID": ""});
 		}
 		
 		else if(type == "success")
@@ -469,7 +521,7 @@ class Purchases
 			
 			changeCount(productID, 1);
 			
-			Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_SUCCESS, data));
+			instance.nativeEventQueue.push({"eventType": PURCHASE_SUCCESS, "productID": data});
 			
 			save();
 		}
@@ -477,13 +529,13 @@ class Purchases
 		else if(type == "failed")
 		{
 			trace("Purchases: Failed Purchase");
-			Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_FAIL, data));
+			instance.nativeEventQueue.push({"eventType": PURCHASE_FAIL, "productID": data});
 		}
 		
 		else if(type == "cancel")
 		{
 			trace("Purchases: Canceled Purchase");
-			Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_CANCEL, data));
+			instance.nativeEventQueue.push({"eventType": PURCHASE_CANCEL, "productID": data});
 		}
 		
 		else if(type == "restore")
@@ -497,7 +549,7 @@ class Purchases
 			
 			changeCount(productID, 1);
 			
-			Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_RESTORE, data));
+			instance.nativeEventQueue.push({"eventType": PURCHASE_RESTORE, "productID": data});
 			
 			save();
 		}
@@ -505,7 +557,7 @@ class Purchases
 		else if(type == "productsVerified")
 		{
 			trace("Purchases: Products Verified");
-			Engine.events.addPurchaseEvent(new StencylEvent(StencylEvent.PURCHASE_PRODUCTS_VERIFIED, data));
+			instance.nativeEventQueue.push({"eventType": PURCHASE_PRODUCT_VERIFIED, "productID": data});
 		}
 		
 		//Consumable

@@ -1,21 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <project>
 	
-	<section if="${enablePurchases}">
-		<source path="src" />
-	
-		<section if="ios">
-			<dependency name="StoreKit.framework" />
-		</section>
-	
-		<section if="android">
-			<dependency name="purchases" path="dependencies/android" />
-			<android extension="com.stencyl.android.AndroidBilling" />
-		</section>
+	<source path="src" />
+
+	<section if="ios">
+		<dependency name="StoreKit.framework" />
 	</section>
-	
-	<section unless="${enablePurchases}">
-		<source path="src-stub" />
+
+	<section if="android">
+		<dependency name="purchases" path="dependencies/android" />
+		<android extension="com.stencyl.android.AndroidBilling" />
 	</section>
 
 </project>

@@ -19,13 +19,15 @@ import com.android.billingclient.api.BillingFlowParams;
 import com.android.billingclient.api.BillingResult;
 import com.android.billingclient.api.ConsumeParams;
 import com.android.billingclient.api.ConsumeResponseListener;
+import com.android.billingclient.api.ProductDetails;
 import com.android.billingclient.api.Purchase;
 import com.android.billingclient.api.PurchaseHistoryRecord;
 import com.android.billingclient.api.PurchaseHistoryResponseListener;
 import com.android.billingclient.api.PurchasesResponseListener;
 import com.android.billingclient.api.PurchasesUpdatedListener;
-import com.android.billingclient.api.SkuDetails;
-import com.android.billingclient.api.SkuDetailsParams;
+import com.android.billingclient.api.QueryProductDetailsParams;
+import com.android.billingclient.api.QueryPurchaseHistoryParams;
+import com.android.billingclient.api.QueryPurchasesParams;
 import com.stencyl.android.util.Security;
 
 import org.haxe.extension.Extension;
@@ -48,7 +50,7 @@ public class AndroidBilling extends Extension implements
     private static String lastPurchaseAttempt = "";
 
     private BillingClient billingClient;
-    private final Map<String, SkuDetails> skuDetailsMap = new HashMap<>();
+    private final Map<String, ProductDetails> productDetailsMap = new HashMap<>();
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -103,7 +105,9 @@ public class AndroidBilling extends Extension implements
     @Override
     public void onBillingSetupFinished(@NonNull BillingResult billingResult) {
         if(isOk(billingResult)) {
-            billingInstance.billingClient.queryPurchasesAsync(BillingClient.SkuType.INAPP, billingInstance);
+            billingInstance.billingClient.queryPurchasesAsync(
+                QueryPurchasesParams.newBuilder().setProductType(BillingClient.ProductType.INAPP).build(),
+                billingInstance);
             haxeCallback("onStarted", new Object[] { "Success" });
         } else {
             haxeCallback("onStarted", new Object[] { "Failure" });
@@ -118,9 +122,9 @@ public class AndroidBilling extends Extension implements
         if(isOk(billingResult)) {
             for(Purchase restoredPurchase : list) {
                 if(Security.verifyPurchase(publicKey, restoredPurchase.getOriginalJson(), restoredPurchase.getSignature())) {
-                    for (String sku: restoredPurchase.getSkus()) {
+                    for (String product: restoredPurchase.getProducts()) {
                         haxeCallback("onRestorePurchases", new Object[] {
-                                sku,
+                                product,
                                 restoredPurchase.getPurchaseToken(),
                                 restoredPurchase.getPurchaseState(),
                                 restoredPurchase.isAcknowledged(),
@@ -135,23 +139,27 @@ public class AndroidBilling extends Extension implements
     public void onBillingServiceDisconnected() {
     }
 
-    private interface SkuDetailsConsumer
+    private interface ProductDetailsConsumer
     {
-        void accept(SkuDetails details);
+        void accept(ProductDetails details);
     }
 
-    private void loadSkuDetails(String productID, SkuDetailsConsumer callback, Runnable errorHandler) {
-        if(skuDetailsMap.containsKey(productID)) {
-            callback.accept(skuDetailsMap.get(productID));
+    private void loadProductDetails(String productID, ProductDetailsConsumer callback, Runnable errorHandler) {
+        if(productDetailsMap.containsKey(productID)) {
+            callback.accept(productDetailsMap.get(productID));
             return;
         }
 
-        SkuDetailsParams.Builder params = SkuDetailsParams.newBuilder();
-        params.setSkusList(Collections.singletonList(productID)).setType(BillingClient.SkuType.INAPP);
-        billingInstance.billingClient.querySkuDetailsAsync(params.build(), (billingResult, skuDetailsList) -> {
-            if(isOk(billingResult) && skuDetailsList != null) {
-                for(SkuDetails details : skuDetailsList) {
-                    skuDetailsMap.put(details.getSku(), details);
+        QueryProductDetailsParams.Builder params = QueryProductDetailsParams.newBuilder();
+        params.setProductList(Collections.singletonList(
+            QueryProductDetailsParams.Product.newBuilder()
+                .setProductId(productID)
+                .setProductType(BillingClient.ProductType.INAPP)
+                .build()));
+        billingInstance.billingClient.queryProductDetailsAsync(params.build(), (billingResult, productDetailsList) -> {
+            if(isOk(billingResult)) {
+                for(ProductDetails details : productDetailsList) {
+                    productDetailsMap.put(details.getProductId(), details);
                     callback.accept(details);
                 }
             }
@@ -165,17 +173,23 @@ public class AndroidBilling extends Extension implements
     public static void buy (final String productID) {
         lastPurchaseAttempt = productID;
 
-        billingInstance.loadSkuDetails(productID,
-                AndroidBilling::skuLoadedForPurchase,
+        billingInstance.loadProductDetails(productID,
+                AndroidBilling::productLoadedForPurchase,
                 AndroidBilling::failedPurchase);
     }
 
-    private static void skuLoadedForPurchase(SkuDetails skuDetails) {
+    private static void productLoadedForPurchase(ProductDetails productDetails) {
+
         Extension.mainActivity.runOnUiThread(() -> {
+
             BillingFlowParams purchaseParams =
                     BillingFlowParams.newBuilder()
-                            .setSkuDetails(skuDetails)
-                            .build();
+                        .setProductDetailsParamsList(Collections.singletonList(
+                            BillingFlowParams.ProductDetailsParams.newBuilder()
+                                .setProductDetails(productDetails)
+                                .build())
+                        )
+                        .build();
 
             billingInstance.billingClient.launchBillingFlow(mainActivity, purchaseParams);
         });
@@ -196,9 +210,9 @@ public class AndroidBilling extends Extension implements
         if(isOk(billingResult)) {
             for(Purchase purchase : list) {
                 if(Security.verifyPurchase(publicKey, purchase.getOriginalJson(), purchase.getSignature())) {
-                    for(String sku : purchase.getSkus()) {
+                    for(String productId : purchase.getProducts()) {
                         haxeCallback("onPurchase", new Object[] {
-                                sku,
+                                productId,
                                 purchase.getPurchaseToken(),
                                 purchase.getPurchaseState(),
                                 purchase.isAcknowledged()});
@@ -258,27 +272,36 @@ public class AndroidBilling extends Extension implements
     public static void restore() {
          Log.i("Purchases", "Attempt to Restore Purchases");
 
-         billingInstance.billingClient.queryPurchaseHistoryAsync(BillingClient.SkuType.INAPP, billingInstance);
+
+         billingInstance.billingClient.queryPurchaseHistoryAsync(
+             QueryPurchaseHistoryParams.newBuilder().setProductType(BillingClient.ProductType.INAPP).build(),
+             billingInstance);
      }
 
     @Override
     public void onPurchaseHistoryResponse(@NonNull BillingResult billingResult, @Nullable List<PurchaseHistoryRecord> list) {
         if(isOk(billingResult)) {
-            billingInstance.billingClient.queryPurchasesAsync(BillingClient.SkuType.INAPP, billingInstance);
+            billingInstance.billingClient.queryPurchasesAsync(
+                QueryPurchasesParams.newBuilder().setProductType(BillingClient.ProductType.INAPP).build(),
+                billingInstance);
         }
     }
 
     @SuppressWarnings("unused")
-    public static void purchaseInfo (String sku) {
-        Log.i("PurchasesInfo","ProductIDInfo: " + sku);
+    public static void purchaseInfo (String productId) {
+        Log.i("PurchasesInfo","ProductIDInfo: " + productId);
         
-        billingInstance.loadSkuDetails(sku, skuDetails -> {
-            haxeCallback("onProductsVerified", new Object[] {skuDetails.getSku(), skuDetails.getTitle(), skuDetails.getDescription(), skuDetails.getPrice()});
-            Log.i("PurchasesInfo", "SKU Title : " + skuDetails.getTitle());
-            Log.i("PurchasesInfo", "SKU Description : " + skuDetails.getDescription());
-            Log.i("PurchasesInfo", "SKU Price : " + skuDetails.getPrice());
-        }, () -> { //error handler for loading sku details
-            Log.i("Purchases", "Failed to get info for " + sku);
+        billingInstance.loadProductDetails(productId, productDetails -> {
+            haxeCallback("onProductsVerified", new Object[] {
+                productDetails.getProductId(),
+                productDetails.getTitle(),
+                productDetails.getDescription(),
+                productDetails.getOneTimePurchaseOfferDetails().getFormattedPrice()});
+            Log.i("PurchasesInfo", "Product Title : " + productDetails.getTitle());
+            Log.i("PurchasesInfo", "Product Description : " + productDetails.getDescription());
+            Log.i("PurchasesInfo", "Product Price : " + productDetails.getOneTimePurchaseOfferDetails().getFormattedPrice());
+        }, () -> { //error handler for loading product details
+            Log.i("Purchases", "Failed to get info for " + productId);
         });
     }
 

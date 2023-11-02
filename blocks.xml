@@ -63,17 +63,6 @@
         </fields>
     </block>
 
-    <block tag="iap-free-unmanaged"
-           code="com.stencyl.purchases.Purchases.consume(~);"
-           type="action"
-           returns="void"
-           category="mobile"
-           helpURL="game-mobile">
-        <fields>
-            <text order="0" />
-        </fields>
-    </block>
-
     <block tag="iap-get-quantity"
            code="com.stencyl.purchases.Purchases.getQuantity(~)"
            type="normal"
@@ -187,4 +176,18 @@
         </fields>
     </block>
     
+    <!-- Deprecated -->
+
+    <block tag="iap-free-unmanaged"
+           code="${deprecated}"
+           type="action"
+           returns="void"
+           category="mobile"
+           deprecated="true"
+           helpURL="game-mobile">
+        <fields>
+            <text order="0" />
+        </fields>
+    </block>
+
 </palette>

@@ -14,7 +14,8 @@
 			<block tag="iap-loaded" />
 			<spacer />
 			<block tag="iap-buy-use" />
-			<block tag="iap-free-unmanaged" />
+			<block tag="iap-set-product-type" />
+			<block tag="iap-is-pending" />
 			<block tag="iap-purchased" />
 			<block tag="iap-get-quantity" />
 			<spacer />

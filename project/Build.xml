@@ -13,22 +13,16 @@
   <depend name="${this_dir}/include/Purchases.h" />
 </files>
 
-<files id="${id}-common" dir="${this_dir}">
+<files id="${id}-ios" dir="${this_dir}">
   <depend files="${id}-dependencies" />
+  <merge id="${id}-common" />
   <cache value="1" project="${id}" asLibrary="true" />
   <compilerflag value="-I${this_dir}/include" />
   <file name="common/ExternalInterface.cpp" />
-</files>
-
-<files id="${id}-ios" dir="${this_dir}">
-  <depend files="${id}-dependencies" />
-  <cache value="1" project="${id}" asLibrary="true" />
-  <compilerflag value="-I${this_dir}/include" />
   <file name="iphone/Purchases.mm" />
 </files>
 
 <target id="haxe">
-  <files id="com.stencyl.purchases-common" />
   <files id="com.stencyl.purchases-ios" if="ios" />
 </target>
 

@@ -459,7 +459,7 @@ class Purchases extends Extension
 		instance.nativeEventQueue.push({"eventType": PURCHASE_CANCEL, "productID": productID});
 	}
 	
-	public function onRestorePurchases(productID:String, purchaseToken:String, purchaseState:Int, isAcknowledged:Bool, isInit:Bool)
+	public function onRestorePurchases(productID:String, purchaseToken:String, purchaseState:Int, isAcknowledged:Bool)
 	{
 		trace("Purchases: Restored Purchase");
 
@@ -472,10 +472,11 @@ class Purchases extends Extension
 			changeCount(productID, 1);
 			
 			save();
-			if(!isAcknowledged) {
+			if(!isAcknowledged)
+			{
 				acknowledgePurchase(productID);
 			}
-			else if(!isInit)
+			else
 			{
 				instance.nativeEventQueue.push({"eventType": PURCHASE_RESTORE, "productID": productID});
 			}

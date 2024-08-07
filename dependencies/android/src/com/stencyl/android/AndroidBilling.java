@@ -44,7 +44,6 @@ public class AndroidBilling extends Extension implements
     private static String publicKey = "";
     private static HaxeObject callback = null;
 
-    private static boolean readPurchasesCache = false;
     private static String lastPurchaseAttempt = "";
 
     private BillingClient billingClient;
@@ -112,9 +111,6 @@ public class AndroidBilling extends Extension implements
 
     @Override
     public void onQueryPurchasesResponse(@NonNull BillingResult billingResult, @NonNull List<Purchase> list) {
-        boolean isInit = !readPurchasesCache;
-        readPurchasesCache = true;
-        
         if(isOk(billingResult)) {
             for(Purchase restoredPurchase : list) {
                 if(Security.verifyPurchase(publicKey, restoredPurchase.getOriginalJson(), restoredPurchase.getSignature())) {
@@ -123,8 +119,7 @@ public class AndroidBilling extends Extension implements
                                 sku,
                                 restoredPurchase.getPurchaseToken(),
                                 restoredPurchase.getPurchaseState(),
-                                restoredPurchase.isAcknowledged(),
-                                isInit});
+                                restoredPurchase.isAcknowledged()});
                     }
                 }
             }

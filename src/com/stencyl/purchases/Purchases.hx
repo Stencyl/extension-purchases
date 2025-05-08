@@ -423,12 +423,19 @@ class Purchases extends Extension
 	private static final PURCHASED:Int = 1;
     private static final PENDING:Int = 2;
 
-    public function onStarted()
+    public function onStarted(result:String)
 	{
-		trace("Purchases: Started");
-		instance.nativeEventQueue.push({"eventType": PURCHASE_READY, "productID": ""});
-		
-		initialized = true;
+		if(result == "Success")
+		{
+			trace("Purchases: Started");
+			instance.nativeEventQueue.push({"eventType": PURCHASE_READY, "productID": ""});
+			
+			initialized = true;
+		}
+		else
+		{
+			trace("Purchases: Failed to start");
+		}
 	}
 
     public function onPurchase(productID:String, purchaseToken:String, purchaseState:Int, isAcknowledged:Bool)
